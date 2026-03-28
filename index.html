@@ -1,158 +1,14 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Inventario Profesional</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Segoe UI',sans-serif;background:#f1f5f9;color:#1e293b;}
-button{cursor:pointer;font-family:'Segoe UI',sans-serif;}
-input,select,textarea{font-family:'Segoe UI',sans-serif;}
-input:focus,select:focus{outline:2px solid #3b82f6;border-color:#3b82f6;}
-.header{background:linear-gradient(135deg,#1e40af,#1d4ed8);padding:16px 20px;position:sticky;top:0;z-index:50;box-shadow:0 2px 12px rgba(0,0,0,0.2);}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;}
-.stat{background:rgba(255,255,255,0.15);border-radius:8px;padding:8px;text-align:center;}
-.stat-v{font-size:15px;font-weight:700;}
-.stat-l{font-size:10px;color:rgba(255,255,255,0.7);}
-.tabs{display:flex;gap:3px;margin-top:12px;background:rgba(255,255,255,0.1);border-radius:10px;padding:3px;}
-.tab{flex:1;padding:8px;background:transparent;border:none;border-radius:8px;font-size:12px;font-weight:700;color:rgba(255,255,255,0.65);cursor:pointer;}
-.tab.on{background:#fff;color:#1d4ed8;}
-.page{max-width:1200px;margin:0 auto;padding:16px 16px 100px;display:none;}
-.page.on{display:block;}
-.card{background:#fff;border-radius:12px;border:1px solid #e2e8f0;margin-bottom:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.06);}
-.ch{padding:12px 16px;border-bottom:1px solid #f1f5f9;font-size:13px;font-weight:700;}
-.cb{padding:14px 16px;}
-.badge{display:inline-flex;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;}
-.inp{width:100%;padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;color:#1e293b;background:#f8fafc;}
-.lbl{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;display:block;}
-.field{margin-bottom:10px;}
-.grid{display:grid;grid-template-columns:1fr;gap:12px;}
-.fab{position:fixed;bottom:24px;right:24px;background:#1d4ed8;border:none;color:#fff;border-radius:50%;width:56px;height:56px;font-size:28px;box-shadow:0 4px 16px rgba(29,78,216,0.5);z-index:40;cursor:pointer;}
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;display:none;align-items:flex-end;justify-content:center;}
-.modal-bg.on{display:flex;}
-.modal{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:580px;padding:22px 18px 36px;max-height:93vh;overflow-y:auto;}
-.fbar{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;flex-wrap:wrap;margin-bottom:12px;}
-.fbtn{padding:6px 13px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid #e2e8f0;background:#fff;color:#64748b;cursor:pointer;white-space:nowrap;}
-.fbtn.on{color:#fff;}
-.catrow{border-left:3px solid;border-radius:8px;padding:10px 12px;margin-bottom:8px;cursor:pointer;}
-.tip{border-left:4px solid;border-radius:8px;padding:10px 12px;margin-bottom:8px;}
-@media(min-width:640px){.stats{grid-template-columns:repeat(6,1fr);} .modal{border-radius:16px;} .modal-bg{align-items:center;padding:16px;}}
-@media(min-width:900px){.grid{grid-template-columns:1fr 1fr;} .layout{display:grid;grid-template-columns:280px 1fr;gap:20px;align-items:start;} .sidebar{position:sticky;top:90px;}}
-@media(min-width:1200px){.grid{grid-template-columns:1fr 1fr 1fr;}}
-</style>
-</head>
-<body>
+import { useState, useMemo, useCallback } from "react";
 
-<div class="header">
-  <div style="font-size:17px;font-weight:700;color:#fff;">👜 Inventario Profesional</div>
-  <div class="stats" id="stats"></div>
-  <div class="tabs">
-    <button class="tab on" id="t-inv" onclick="showTab('inv')">📦 Inventario</button>
-    <button class="tab" id="t-rep" onclick="showTab('rep')">📊 Reportes</button>
-    <button class="tab" id="t-reg" onclick="showTab('reg')">📋 Reglas</button>
-  </div>
-</div>
+const CC = {"Bolsos Pequeños":"#0284c7","Bolsos Medianos":"#0891b2","Bolsos Grandes":"#166534","Carteras":"#b45309","Monederos y Billeteras":"#92400e","Accesorios de Moda":"#9333ea","Accesorios para Celular":"#0e7490","Camisetas":"#1d4ed8","Pantalones":"#16a34a","Chaquetas":"#d97706","Vestidos":"#db2777","Zapatos":"#7c3aed","Ropa Interior":"#ca8a04"};
+const CI = {"Bolsos Pequeños":"👜","Bolsos Medianos":"👝","Bolsos Grandes":"🛍️","Carteras":"💼","Monederos y Billeteras":"👛","Accesorios de Moda":"⌚","Accesorios para Celular":"📱","Camisetas":"👕","Pantalones":"👖","Chaquetas":"🧥","Vestidos":"👗","Zapatos":"👟","Ropa Interior":"🩲"};
+const NL = {basico:{l:"Básico",c:"#0284c7"},tendencia:{l:"Tendencia",c:"#db2777"},economico:{l:"Económico",c:"#16a34a"},premium:{l:"Premium",c:"#7c3aed"}};
+const CATS = Object.keys(CC);
 
-<div class="page on" id="p-inv">
-  <div class="layout">
-    <div class="sidebar">
-      <div class="card" style="margin-bottom:12px;">
-        <div class="ch">📊 Por Categoría</div>
-        <div class="cb" id="catlist" style="padding:10px 12px;"></div>
-      </div>
-      <div class="card">
-        <div class="ch" style="color:#dc2626;">🚨 Alertas</div>
-        <div class="cb" id="alertlist" style="padding:10px 12px;"></div>
-      </div>
-    </div>
-    <div>
-      <div class="fbar" id="fbar"></div>
-      <input class="inp" id="search" placeholder="🔍 Buscar producto..." oninput="render()" style="margin-bottom:12px;"/>
-      <div class="grid" id="lista"></div>
-    </div>
-  </div>
-</div>
-
-<div class="page" id="p-rep">
-  <div id="rep-content"></div>
-</div>
-
-<div class="page" id="p-reg">
-  <div id="reg-content"></div>
-</div>
-
-<button class="fab" id="fab" onclick="openModal()">+</button>
-
-<div class="modal-bg" id="modal-bg" onclick="bgClick(event)">
-<div class="modal" id="modal">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-    <div id="modal-ttl" style="font-size:16px;font-weight:700;">Producto</div>
-    <button onclick="closeModal()" style="background:#f1f5f9;border:none;border-radius:20px;padding:4px 13px;font-size:13px;color:#64748b;">✕</button>
-  </div>
-  <div class="field">
-    <span class="lbl">📸 Foto</span>
-    <div id="fp" style="display:none;margin-bottom:8px;position:relative;">
-      <img id="fi" src="" style="width:100%;max-height:180px;object-fit:cover;border-radius:10px;border:1px solid #e2e8f0;"/>
-      <button onclick="rmPhoto()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.5);border:none;color:#fff;border-radius:50%;width:28px;height:28px;font-size:13px;">✕</button>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-      <label style="display:flex;align-items:center;justify-content:center;gap:6px;padding:9px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:#1d4ed8;">📷 Cámara<input type="file" accept="image/*" capture="environment" onchange="addPhoto(event)" style="display:none;"/></label>
-      <label style="display:flex;align-items:center;justify-content:center;gap:6px;padding:9px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:#16a34a;">🖼️ Galería<input type="file" accept="image/*" onchange="addPhoto(event)" style="display:none;"/></label>
-    </div>
-  </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-    <div class="field"><span class="lbl">Código</span><input id="f-cod" class="inp" placeholder="BOL-001"/></div>
-    <div class="field"><span class="lbl">Categoría</span>
-      <select id="f-cat" class="inp">
-        <option>Bolsos Pequeños</option><option>Bolsos Medianos</option><option>Bolsos Grandes</option>
-        <option>Carteras</option><option>Monederos y Billeteras</option>
-        <option>Accesorios de Moda</option><option>Accesorios para Celular</option>
-        <option>Camisetas</option><option>Pantalones</option><option>Chaquetas</option>
-        <option>Vestidos</option><option>Zapatos</option><option>Ropa Interior</option>
-      </select>
-    </div>
-  </div>
-  <div class="field"><span class="lbl">Nombre del producto</span><input id="f-nom" class="inp" placeholder="Ej: Bolso Tote Cuero Negro"/></div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-    <div class="field"><span class="lbl">Color / Modelo</span><input id="f-col" class="inp" placeholder="Negro"/></div>
-    <div class="field"><span class="lbl">Nivel</span>
-      <select id="f-niv" class="inp">
-        <option value="basico">Básico</option><option value="tendencia">Tendencia</option>
-        <option value="economico">Económico</option><option value="premium">Premium</option>
-      </select>
-    </div>
-  </div>
-  <div style="background:#f8fafc;border-radius:10px;padding:12px;margin-bottom:12px;">
-    <span class="lbl" style="margin-bottom:10px;">💰 Precios y Stock</span>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
-      <div><span class="lbl" style="color:#dc2626;">💲 Costo</span><input id="f-cos" class="inp" type="number" step="0.01" min="0" value="0" oninput="calcModal()" style="border-color:#fecaca;text-align:center;"/></div>
-      <div><span class="lbl" style="color:#16a34a;">🏷️ Venta</span><input id="f-ven" class="inp" type="number" step="0.01" min="0" value="0" oninput="calcModal()" style="border-color:#bbf7d0;text-align:center;"/></div>
-      <div><span class="lbl">📦 Stock</span><input id="f-stk" class="inp" type="number" min="0" value="0" oninput="calcModal()" style="text-align:center;"/></div>
-    </div>
-    <div><span class="lbl">⚠️ Stock mínimo</span><input id="f-min" class="inp" type="number" min="0" value="5" style="text-align:center;"/><div style="font-size:11px;color:#94a3b8;margin-top:3px;">Te avisaremos cuando bajes de este número</div></div>
-  </div>
-  <div id="calcs" style="background:#eff6ff;border-radius:10px;padding:12px;margin-bottom:12px;"></div>
-  <div style="background:#f0fdf4;border-radius:10px;padding:12px;margin-bottom:12px;border:1px solid #bbf7d0;">
-    <span class="lbl" style="color:#16a34a;margin-bottom:10px;">👤 Proveedor</span>
-    <div class="field"><span class="lbl">Nombre</span><input id="f-prv" class="inp" placeholder="Textiles García"/></div>
-    <div class="field"><span class="lbl">Dirección</span><input id="f-dir" class="inp" placeholder="Calle, Ciudad, País"/></div>
-    <div class="field"><span class="lbl">Google Maps</span><input id="f-map" class="inp" type="url" placeholder="https://maps.google.com/..."/></div>
-    <div class="field" style="margin-bottom:0;"><span class="lbl">Notas</span><input id="f-not" class="inp" placeholder="Condiciones, descuentos..."/></div>
-  </div>
-  <button onclick="saveProduct()" style="width:100%;padding:13px;background:#1d4ed8;border:none;border-radius:10px;color:#fff;font-size:15px;font-weight:700;">✓ Guardar Producto</button>
-</div>
-</div>
-
-<script>
-var CC={"Bolsos Pequeños":"#0284c7","Bolsos Medianos":"#0891b2","Bolsos Grandes":"#166534","Carteras":"#b45309","Monederos y Billeteras":"#92400e","Accesorios de Moda":"#9333ea","Accesorios para Celular":"#0e7490","Camisetas":"#1d4ed8","Pantalones":"#16a34a","Chaquetas":"#d97706","Vestidos":"#db2777","Zapatos":"#7c3aed","Ropa Interior":"#ca8a04"};
-var CI={"Bolsos Pequeños":"👜","Bolsos Medianos":"👝","Bolsos Grandes":"🛍️","Carteras":"💼","Monederos y Billeteras":"👛","Accesorios de Moda":"⌚","Accesorios para Celular":"📱","Camisetas":"👕","Pantalones":"👖","Chaquetas":"🧥","Vestidos":"👗","Zapatos":"👟","Ropa Interior":"🩲"};
-var NL={basico:{l:"Básico",c:"#0284c7"},tendencia:{l:"Tendencia",c:"#db2777"},economico:{l:"Económico",c:"#16a34a"},premium:{l:"Premium",c:"#7c3aed"}};
-
-var DEMO=[
-  {id:1,cod:"BOL-001",cat:"Bolsos Pequeños",nom:"Mini Bolso Acolchado",col:"Rosa",niv:"tendencia",cos:18,ven:45,stk:12,min:5,foto:"",prv:"Distribuidora Moda",dir:"Calle 45 #12-30, Medellín",map:"",not:"Pago contraentrega"},
-  {id:2,cod:"BOL-002",cat:"Bolsos Medianos",nom:"Tote Bag Canvas",col:"Beige",niv:"basico",cos:22,ven:50,stk:8,min:5,foto:"",prv:"Textiles García",dir:"Av. Principal 100, Bogotá",map:"",not:"10% descuento x10+"},
-  {id:3,cod:"BOL-003",cat:"Bolsos Grandes",nom:"Bolso Shopper Cuero PU",col:"Negro",niv:"premium",cos:45,ven:110,stk:4,min:5,foto:"",prv:"Importaciones Elite",dir:"",map:"",not:"Mín. 3 unidades"},
+const DEMO = [
+  {id:1,cod:"BOL-001",cat:"Bolsos Pequeños",nom:"Mini Bolso Acolchado",col:"Rosa",niv:"tendencia",cos:18,ven:45,stk:12,min:5,foto:"",prv:"Distribuidora Moda",dir:"Calle 45, Medellín",map:"",not:"Pago contraentrega"},
+  {id:2,cod:"BOL-002",cat:"Bolsos Medianos",nom:"Tote Bag Canvas",col:"Beige",niv:"basico",cos:22,ven:50,stk:8,min:5,foto:"",prv:"Textiles García",dir:"Av. Principal, Bogotá",map:"",not:"10% x10+"},
+  {id:3,cod:"BOL-003",cat:"Bolsos Grandes",nom:"Bolso Shopper Cuero PU",col:"Negro",niv:"premium",cos:45,ven:110,stk:4,min:5,foto:"",prv:"Importaciones Elite",dir:"",map:"",not:"Mín. 3 uds"},
   {id:4,cod:"CAR-001",cat:"Carteras",nom:"Cartera Crossbody Cadena",col:"Dorado",niv:"tendencia",cos:30,ven:75,stk:6,min:4,foto:"",prv:"Distribuidora Moda",dir:"",map:"",not:""},
   {id:5,cod:"MON-001",cat:"Monederos y Billeteras",nom:"Monedero Tejido Crochet",col:"Multicolor",niv:"economico",cos:8,ven:20,stk:20,min:8,foto:"",prv:"Artesanías del Norte",dir:"",map:"",not:"Hecho a mano"},
   {id:6,cod:"BOL-004",cat:"Bolsos Pequeños",nom:"Bolso Baguette Satín",col:"Vino",niv:"tendencia",cos:25,ven:60,stk:3,min:5,foto:"",prv:"Distribuidora Moda",dir:"",map:"",not:""},
@@ -164,321 +20,473 @@ var DEMO=[
   {id:12,cod:"MON-002",cat:"Monederos y Billeteras",nom:"Billetera Cuero Genuino",col:"Café",niv:"premium",cos:20,ven:55,stk:10,min:5,foto:"",prv:"Curtiembres El Valle",dir:"",map:"",not:""},
 ];
 
-var rows=JSON.parse(localStorage.getItem('inv_final')||'null')||DEMO;
-var nid=rows.length?Math.max.apply(null,rows.map(function(r){return r.id;}))+1:13;
-var filtro="Todas";
-var editId=null;
-var photo="";
+const money = n => "$" + Math.abs(Number(n)).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+const calcR = r => { const g = r.ven - r.cos; return { g, inv: r.stk * r.cos, gt: r.stk * g, m: r.cos > 0 ? Math.round(g / r.cos * 100) : 0 }; };
 
-function $(id){return document.getElementById(id);}
-function money(n){return"$"+Math.abs(Number(n)).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,",");}
-function pct(g,c){return c>0?Math.round(g/c*100):0;}
-function cr(r){var g=r.ven-r.cos;return{g:g,inv:r.stk*r.cos,gt:r.stk*g,m:pct(g,r.cos)};}
-function save(){localStorage.setItem('inv_final',JSON.stringify(rows));}
+const BLANK = { cod: "", cat: "Bolsos Pequeños", nom: "", col: "", niv: "basico", cos: 0, ven: 0, stk: 0, min: 5, foto: "", prv: "", dir: "", map: "", not: "" };
 
-// TAB SWITCHING
-function showTab(t){
-  ['inv','rep','reg'].forEach(function(x){
-    $('p-'+x).classList[x===t?'add':'remove']('on');
-    $('t-'+x).classList[x===t?'add':'remove']('on');
-  });
-  $('fab').style.display=t==='inv'?'flex':'none';
-  if(t==='rep')buildRep();
-  if(t==='reg')buildReg();
+function StatBox({ val, label, color }) {
+  return (
+    <div style={{ background: "rgba(255,255,255,0.15)", borderRadius: 8, padding: "8px 6px", textAlign: "center" }}>
+      <div style={{ fontSize: 15, fontWeight: 700, color }}>{val}</div>
+      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.7)", marginTop: 1 }}>{label}</div>
+    </div>
+  );
 }
 
-// FILTER
-function sf(cat){
-  filtro=cat;
-  render();
+function CatRow({ cat, t, tiv, active, onClick }) {
+  const col = CC[cat] || "#64748b";
+  const p = tiv > 0 ? Math.round(t.inv / tiv * 100) : 0;
+  return (
+    <div onClick={onClick} style={{ marginBottom: 8, padding: "10px 12px", background: active ? col + "18" : "#f8fafc", border: `1px solid ${active ? col : "#e2e8f0"}`, borderLeft: `3px solid ${col}`, borderRadius: 8, cursor: "pointer", userSelect: "none" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 2 }}>
+        <span style={{ fontSize: 12, fontWeight: 700, color: col }}>{CI[cat] || "📦"} {cat}</span>
+        <span style={{ fontSize: 12, fontWeight: 700, color: "#7c3aed" }}>+{money(t.gt)}</span>
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+        <span style={{ fontSize: 11, color: "#64748b" }}>{t.n} prod.</span>
+        <span style={{ fontSize: 11, color: "#64748b" }}>Inv: {money(t.inv)}</span>
+      </div>
+      <div style={{ height: 4, background: "#e2e8f0", borderRadius: 2 }}>
+        <div style={{ height: "100%", width: `${p}%`, background: col, borderRadius: 2 }} />
+      </div>
+    </div>
+  );
 }
 
-// RENDER
-function render(){
-  // Stats
-  var ts=rows.reduce(function(a,r){return a+r.stk;},0);
-  var ti=rows.reduce(function(a,r){return a+cr(r).inv;},0);
-  var tg=rows.reduce(function(a,r){return a+cr(r).gt;},0);
-  var al=rows.filter(function(r){return r.stk<=r.min;}).length;
-  var mp=rows.length?Math.round(rows.reduce(function(a,r){return a+cr(r).m;},0)/rows.length):0;
-  $('stats').innerHTML=
-    '<div class="stat"><div class="stat-v" style="color:#38bdf8;">'+rows.length+'</div><div class="stat-l">Productos</div></div>'+
-    '<div class="stat"><div class="stat-v" style="color:#86efac;">'+ts+'</div><div class="stat-l">Unidades</div></div>'+
-    '<div class="stat"><div class="stat-v" style="color:#fde68a;">'+money(ti)+'</div><div class="stat-l">Inversión</div></div>'+
-    '<div class="stat"><div class="stat-v" style="color:#6ee7b7;">'+money(tg)+'</div><div class="stat-l">Ganancia</div></div>'+
-    '<div class="stat"><div class="stat-v" style="color:#c4b5fd;">'+mp+'%</div><div class="stat-l">Margen</div></div>'+
-    '<div class="stat"><div class="stat-v" style="color:'+(al>0?'#fca5a5':'#86efac')+';">'+al+'</div><div class="stat-l">Alertas</div></div>';
-
-  // Category list
-  var bc={};
-  rows.forEach(function(r){
-    if(!bc[r.cat])bc[r.cat]={n:0,inv:0,gt:0};
-    var c=cr(r);bc[r.cat].n++;bc[r.cat].inv+=c.inv;bc[r.cat].gt+=c.gt;
-  });
-  var tiv=rows.reduce(function(a,r){return a+cr(r).inv;},0);
-  var cl='';
-  Object.keys(bc).sort(function(a,b){return bc[b].gt-bc[a].gt;}).forEach(function(cat){
-    var t=bc[cat];
-    var col=CC[cat]||'#64748b';
-    var ic=CI[cat]||'📦';
-    var p=tiv>0?Math.round(t.inv/tiv*100):0;
-    var act=filtro===cat;
-    cl+='<div onclick="sf(\''+cat+'\')" style="margin-bottom:8px;padding:10px;background:'+(act?col+'18':'#f8fafc')+';border:1px solid '+(act?col:'#e2e8f0')+';border-left:3px solid '+col+';border-radius:8px;cursor:pointer;">'+
-      '<div style="display:flex;justify-content:space-between;margin-bottom:2px;">'+
-      '<span style="font-size:12px;font-weight:700;color:'+col+';">'+ic+' '+cat+'</span>'+
-      '<span style="font-size:12px;font-weight:700;color:#7c3aed;">+'+money(t.gt)+'</span></div>'+
-      '<div style="display:flex;justify-content:space-between;margin-bottom:5px;">'+
-      '<span style="font-size:11px;color:#64748b;">'+t.n+' prod.</span>'+
-      '<span style="font-size:11px;color:#64748b;">Inv: '+money(t.inv)+'</span></div>'+
-      '<div style="height:4px;background:#e2e8f0;border-radius:2px;"><div style="height:100%;width:'+p+'%;background:'+col+';border-radius:2px;"></div></div>'+
-      '</div>';
-  });
-  cl+='<div onclick="sf(\'Todas\')" style="padding:8px 10px;background:'+(filtro==='Todas'?'#dbeafe':'#f0fdf4')+';border:1px solid '+(filtro==='Todas'?'#93c5fd':'#bbf7d0')+';border-radius:8px;display:flex;justify-content:space-between;cursor:pointer;">'+
-    '<span style="font-size:11px;font-weight:700;color:#1d4ed8;">🏁 Total General</span>'+
-    '<span style="font-size:12px;font-weight:700;color:#7c3aed;">+'+money(tg)+'</span></div>';
-  $('catlist').innerHTML=cl;
-
-  // Alerts
-  var ba=rows.filter(function(r){return r.stk<=r.min;});
-  var al2='';
-  if(ba.length===0){al2='<div style="text-align:center;padding:10px;color:#16a34a;font-size:13px;">✅ Todo en orden</div>';}
-  else{ba.forEach(function(r){
-    var lv=r.stk===0?'red':'yellow';
-    al2+='<div style="border-left:3px solid '+(lv==='red'?'#fecaca':'#fde68a')+';background:'+(lv==='red'?'#fff5f5':'#fffbeb')+';border-radius:6px;padding:8px 10px;margin-bottom:6px;">'+
-      '<div style="font-size:12px;font-weight:700;color:'+(lv==='red'?'#dc2626':'#d97706')+';">'+r.nom+'</div>'+
-      '<div style="font-size:11px;color:#64748b;">Stock: <b>'+r.stk+'</b> / Mín: '+r.min+' — '+(r.stk===0?'⛔ Sin stock':'⚠️ Reponer')+'</div></div>';
-  });}
-  $('alertlist').innerHTML=al2;
-
-  // Filter buttons
-  var cats=['Todas'];
-  rows.forEach(function(r){if(cats.indexOf(r.cat)===-1)cats.push(r.cat);});
-  var fb='';
-  cats.forEach(function(c){
-    var col=CC[c]||'#3b82f6';
-    var act=filtro===c;
-    fb+='<button class="fbtn'+(act?' on':'')+'" onclick="sf(\''+c+'\')" style="'+(act?'background:'+col+';border-color:'+col+';color:#fff;':'')+'">'+
-      (CI[c]||'')+' '+c+'</button>';
-  });
-  $('fbar').innerHTML=fb;
-
-  // Products
-  var q=($('search')||{value:''}).value.toLowerCase();
-  var vis=filtro==='Todas'?rows:rows.filter(function(r){return r.cat===filtro;});
-  if(q)vis=vis.filter(function(r){return r.nom.toLowerCase().indexOf(q)>-1||r.cod.toLowerCase().indexOf(q)>-1||r.col.toLowerCase().indexOf(q)>-1;});
-
-  if(vis.length===0){$('lista').innerHTML='<div style="text-align:center;padding:40px;color:#94a3b8;grid-column:1/-1;">No hay productos.</div>';return;}
-
-  $('lista').innerHTML=vis.map(function(r){
-    var c=cr(r);
-    var col=CC[r.cat]||'#64748b';
-    var ic=CI[r.cat]||'📦';
-    var nv=NL[r.niv]||NL.basico;
-    var sc=r.stk===0?'#dc2626':r.stk<=r.min?'#d97706':'#16a34a';
-    return '<div class="card">'+
-      (r.foto?'<img src="'+r.foto+'" style="width:100%;height:160px;object-fit:cover;"/>':'')+
-      '<div style="border-left:4px solid '+col+';padding:12px;">'+
-      '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">'+
-      '<div style="flex:1;margin-right:8px;">'+
-      '<div style="font-size:11px;color:#94a3b8;">'+r.cod+'</div>'+
-      '<div style="font-size:14px;font-weight:700;margin-bottom:5px;">'+r.nom+'</div>'+
-      '<div style="display:flex;gap:5px;flex-wrap:wrap;">'+
-      '<span class="badge" style="background:'+col+'15;color:'+col+';border:1px solid '+col+'30;">'+ic+' '+r.cat+'</span>'+
-      '<span class="badge" style="background:'+nv.c+'15;color:'+nv.c+';border:1px solid '+nv.c+'30;">'+nv.l+'</span>'+
-      (r.col?'<span class="badge" style="background:#f1f5f9;color:#64748b;">'+r.col+'</span>':'')+
-      '</div></div>'+
-      '<div style="text-align:right;">'+
-      '<div style="font-size:11px;color:#94a3b8;">Stock</div>'+
-      '<div style="font-size:22px;font-weight:700;color:'+sc+';">'+r.stk+'</div>'+
-      (r.stk===0?'<div style="font-size:10px;color:#dc2626;font-weight:700;">⛔ AGOTADO</div>':r.stk<=r.min?'<div style="font-size:10px;color:#d97706;font-weight:700;">⚠️ Bajo</div>':'')+
-      '</div></div>'+
-      '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px;background:#f8fafc;border-radius:8px;padding:8px;">'+
-      '<div style="text-align:center;"><div style="font-size:10px;color:#dc2626;">💲 Costo</div><div style="font-size:13px;font-weight:700;color:#dc2626;">'+money(r.cos)+'</div></div>'+
-      '<div style="text-align:center;border-left:1px solid #e2e8f0;"><div style="font-size:10px;color:#16a34a;">🏷️ Venta</div><div style="font-size:13px;font-weight:700;color:#16a34a;">'+money(r.ven)+'</div></div>'+
-      '<div style="text-align:center;border-left:1px solid #e2e8f0;"><div style="font-size:10px;color:#7c3aed;">💰 Gan/u</div><div style="font-size:13px;font-weight:700;color:#7c3aed;">'+money(c.g)+'</div></div>'+
-      '<div style="text-align:center;border-left:1px solid #e2e8f0;"><div style="font-size:10px;color:#7c3aed;">📈 Margen</div><div style="font-size:13px;font-weight:700;color:#7c3aed;">'+c.m+'%</div></div>'+
-      '</div>'+
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;">'+
-      '<div style="background:#fff5f5;border-radius:7px;padding:7px;text-align:center;"><div style="font-size:10px;color:#fca5a5;">Total Invertido</div><div style="font-size:13px;font-weight:700;color:#dc2626;">'+money(c.inv)+'</div></div>'+
-      '<div style="background:#f0fdf4;border-radius:7px;padding:7px;text-align:center;"><div style="font-size:10px;color:#86efac;">Gan. Potencial</div><div style="font-size:13px;font-weight:700;color:#16a34a;">+'+money(c.gt)+'</div></div>'+
-      '</div>'+
-      (r.prv?'<div style="background:#f0fdf4;border-radius:8px;padding:8px 10px;margin-bottom:10px;font-size:12px;">'+
-      '<div style="font-weight:700;color:#16a34a;margin-bottom:3px;">👤 '+r.prv+'</div>'+
-      (r.dir?'<div style="color:#475569;">📍 '+r.dir+'</div>':'')+
-      (r.map?'<a href="'+r.map+'" target="_blank" style="color:#0284c7;font-weight:600;">🗺️ Ver en Maps</a>':'')+
-      (r.not?'<div style="color:#94a3b8;margin-top:2px;">📝 '+r.not+'</div>':'')+
-      '</div>':'')+
-      '<div style="display:flex;gap:8px;">'+
-      '<button onclick="editRow('+r.id+')" style="flex:1;padding:8px;background:#dbeafe;border:none;border-radius:8px;color:#1d4ed8;font-weight:700;font-size:13px;cursor:pointer;">✏️ Editar</button>'+
-      '<button onclick="delRow('+r.id+')" style="flex:1;padding:8px;background:#fee2e2;border:none;border-radius:8px;color:#dc2626;font-weight:700;font-size:13px;cursor:pointer;">🗑 Eliminar</button>'+
-      '</div></div></div>';
-  }).join('');
+function ProductCard({ r, onEdit, onDel }) {
+  const c = calcR(r);
+  const col = CC[r.cat] || "#64748b";
+  const nv = NL[r.niv] || NL.basico;
+  const sc = r.stk === 0 ? "#dc2626" : r.stk <= r.min ? "#d97706" : "#16a34a";
+  return (
+    <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+      {r.foto && <img src={r.foto} style={{ width: "100%", height: 160, objectFit: "cover" }} />}
+      <div style={{ borderLeft: `4px solid ${col}`, padding: 12 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+          <div style={{ flex: 1, marginRight: 8 }}>
+            <div style={{ fontSize: 11, color: "#94a3b8" }}>{r.cod}</div>
+            <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 5 }}>{r.nom}</div>
+            <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+              <span style={{ background: col + "15", color: col, border: `1px solid ${col}30`, borderRadius: 20, padding: "2px 8px", fontSize: 11, fontWeight: 700 }}>{CI[r.cat] || ""} {r.cat}</span>
+              <span style={{ background: nv.c + "15", color: nv.c, border: `1px solid ${nv.c}30`, borderRadius: 20, padding: "2px 8px", fontSize: 11, fontWeight: 700 }}>{nv.l}</span>
+              {r.col && <span style={{ background: "#f1f5f9", color: "#64748b", borderRadius: 20, padding: "2px 8px", fontSize: 11 }}>{r.col}</span>}
+            </div>
+          </div>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: 11, color: "#94a3b8" }}>Stock</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: sc }}>{r.stk}</div>
+            {r.stk === 0 && <div style={{ fontSize: 10, color: "#dc2626", fontWeight: 700 }}>⛔ AGOTADO</div>}
+            {r.stk > 0 && r.stk <= r.min && <div style={{ fontSize: 10, color: "#d97706", fontWeight: 700 }}>⚠️ Bajo</div>}
+          </div>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 6, marginBottom: 8, background: "#f8fafc", borderRadius: 8, padding: 8 }}>
+          {[["💲 Costo", money(r.cos), "#dc2626"], ["🏷️ Venta", money(r.ven), "#16a34a"], ["💰 Gan/u", money(c.g), "#7c3aed"], ["📈 Margen", c.m + "%", "#7c3aed"]].map(([l, v, col]) => (
+            <div key={l} style={{ textAlign: "center" }}>
+              <div style={{ fontSize: 10, color: col }}>{l}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: col }}>{v}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginBottom: 10 }}>
+          <div style={{ background: "#fff5f5", borderRadius: 7, padding: "7px 8px", textAlign: "center" }}>
+            <div style={{ fontSize: 10, color: "#fca5a5" }}>Total Invertido</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#dc2626" }}>{money(c.inv)}</div>
+          </div>
+          <div style={{ background: "#f0fdf4", borderRadius: 7, padding: "7px 8px", textAlign: "center" }}>
+            <div style={{ fontSize: 10, color: "#86efac" }}>Gan. Potencial</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#16a34a" }}>+{money(c.gt)}</div>
+          </div>
+        </div>
+        {r.prv && (
+          <div style={{ background: "#f0fdf4", borderRadius: 8, padding: "8px 10px", marginBottom: 10, fontSize: 12 }}>
+            <div style={{ fontWeight: 700, color: "#16a34a", marginBottom: 3 }}>👤 {r.prv}</div>
+            {r.dir && <div style={{ color: "#475569" }}>📍 {r.dir}</div>}
+            {r.map && <a href={r.map} target="_blank" style={{ color: "#0284c7", fontWeight: 600 }}>🗺️ Ver en Maps</a>}
+            {r.not && <div style={{ color: "#94a3b8", marginTop: 2 }}>📝 {r.not}</div>}
+          </div>
+        )}
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={() => onEdit(r)} style={{ flex: 1, padding: 8, background: "#dbeafe", border: "none", borderRadius: 8, color: "#1d4ed8", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>✏️ Editar</button>
+          <button onClick={() => onDel(r.id)} style={{ flex: 1, padding: 8, background: "#fee2e2", border: "none", borderRadius: 8, color: "#dc2626", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>🗑 Eliminar</button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
-function buildRep(){
-  var ti=rows.reduce(function(a,r){return a+cr(r).inv;},0);
-  var tg=rows.reduce(function(a,r){return a+cr(r).gt;},0);
-  var tv=rows.reduce(function(a,r){return a+r.stk*r.ven;},0);
-  var mp=rows.length?Math.round(rows.reduce(function(a,r){return a+cr(r).m;},0)/rows.length):0;
-  var top5g=[].concat(rows).sort(function(a,b){return cr(b).gt-cr(a).gt;}).slice(0,5);
-  var top5m=[].concat(rows).sort(function(a,b){return cr(b).m-cr(a).m;}).slice(0,5);
-  var ag=rows.filter(function(r){return r.stk===0;});
-  var bj=rows.filter(function(r){return r.stk>0&&r.stk<=r.min;});
-  $('rep-content').innerHTML=
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">'+
-    '<div style="background:#fff5f5;border-radius:12px;padding:14px;text-align:center;"><div style="font-size:11px;color:#64748b;margin-bottom:4px;">💲 Total Invertido</div><div style="font-size:22px;font-weight:700;color:#dc2626;">'+money(ti)+'</div></div>'+
-    '<div style="background:#f0fdf4;border-radius:12px;padding:14px;text-align:center;"><div style="font-size:11px;color:#64748b;margin-bottom:4px;">🏷️ Venta Potencial</div><div style="font-size:22px;font-weight:700;color:#16a34a;">'+money(tv)+'</div></div>'+
-    '<div style="background:#faf5ff;border-radius:12px;padding:14px;text-align:center;"><div style="font-size:11px;color:#64748b;margin-bottom:4px;">💰 Ganancia Potencial</div><div style="font-size:22px;font-weight:700;color:#7c3aed;">'+money(tg)+'</div></div>'+
-    '<div style="background:#eff6ff;border-radius:12px;padding:14px;text-align:center;"><div style="font-size:11px;color:#64748b;margin-bottom:4px;">📈 Margen Promedio</div><div style="font-size:22px;font-weight:700;color:#0284c7;">'+mp+'%</div></div>'+
-    '</div>'+
-    '<div class="card" style="margin-bottom:12px;"><div class="ch">🏆 Top 5 — Mayor Ganancia</div><div class="cb">'+
-    top5g.map(function(r,i){return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f1f5f9;"><span style="font-size:13px;"><span style="color:#94a3b8;margin-right:8px;">#'+(i+1)+'</span>'+r.nom+'</span><span style="font-size:13px;font-weight:700;color:#7c3aed;">+'+money(cr(r).gt)+'</span></div>';}).join('')+
-    '</div></div>'+
-    '<div class="card" style="margin-bottom:12px;"><div class="ch">📈 Top 5 — Mayor Margen</div><div class="cb">'+
-    top5m.map(function(r,i){return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f1f5f9;"><span style="font-size:13px;"><span style="color:#94a3b8;margin-right:8px;">#'+(i+1)+'</span>'+r.nom+'</span><span style="font-size:13px;font-weight:700;color:#16a34a;">'+cr(r).m+'%</span></div>';}).join('')+
-    '</div></div>'+
-    (ag.length?'<div class="card" style="margin-bottom:12px;"><div class="ch" style="color:#dc2626;">⛔ Agotados ('+ag.length+')</div><div class="cb">'+ag.map(function(r){return'<div style="padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:13px;">'+r.nom+' <span style="color:#94a3b8;">'+r.cod+'</span></div>';}).join('')+'</div></div>':'')+
-    (bj.length?'<div class="card"><div class="ch" style="color:#d97706;">⚠️ Stock Bajo — Reponer ('+bj.length+')</div><div class="cb">'+bj.map(function(r){return'<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:13px;"><span>'+r.nom+'</span><span style="color:#d97706;font-weight:700;">'+r.stk+' uds</span></div>';}).join('')+'</div></div>':'');
+function Modal({ row, setRow, onSave, onClose, title }) {
+  const c = calcR(row);
+  const g = row.ven - row.cos;
+  const m = row.cos > 0 ? Math.round(g / row.cos * 100) : 0;
+  const bw = Math.min(Math.max(m, 0), 100);
+  const bc = m >= 60 ? "#16a34a" : m >= 30 ? "#d97706" : "#dc2626";
+
+  const f = (k, type = "text") => ({
+    value: row[k],
+    onChange: e => setRow(r => ({ ...r, [k]: type === "number" ? parseFloat(e.target.value) || 0 : type === "int" ? parseInt(e.target.value) || 0 : e.target.value })),
+    style: { width: "100%", padding: "8px 10px", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 13, color: "#1e293b", background: "#f8fafc", outline: "none" }
+  });
+
+  const inpStyle = { width: "100%", padding: "8px 10px", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 13, color: "#1e293b", background: "#f8fafc", outline: "none" };
+
+  return (
+    <div onClick={e => e.target === e.currentTarget && onClose()} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 100, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+      <div style={{ background: "#fff", borderRadius: "20px 20px 0 0", width: "100%", maxWidth: 580, padding: "22px 18px 36px", maxHeight: "93vh", overflowY: "auto" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+          <div style={{ fontSize: 16, fontWeight: 700 }}>{title}</div>
+          <button onClick={onClose} style={{ background: "#f1f5f9", border: "none", borderRadius: 20, padding: "4px 13px", fontSize: 13, color: "#64748b", cursor: "pointer" }}>✕</button>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+          <div><label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", display: "block", marginBottom: 4 }}>CÓDIGO</label><input {...f("cod")} /></div>
+          <div><label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", display: "block", marginBottom: 4 }}>CATEGORÍA</label>
+            <select value={row.cat} onChange={e => setRow(r => ({ ...r, cat: e.target.value }))} style={inpStyle}>
+              {CATS.map(c => <option key={c}>{c}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <div style={{ marginBottom: 10 }}><label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", display: "block", marginBottom: 4 }}>NOMBRE DEL PRODUCTO</label><input {...f("nom")} placeholder="Ej: Bolso Tote Cuero Negro" /></div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+          <div><label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", display: "block", marginBottom: 4 }}>COLOR / MODELO</label><input {...f("col")} placeholder="Negro" /></div>
+          <div><label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", display: "block", marginBottom: 4 }}>NIVEL</label>
+            <select value={row.niv} onChange={e => setRow(r => ({ ...r, niv: e.target.value }))} style={inpStyle}>
+              <option value="basico">Básico</option><option value="tendencia">Tendencia</option>
+              <option value="economico">Económico</option><option value="premium">Premium</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Precios */}
+        <div style={{ background: "#f8fafc", borderRadius: 10, padding: 12, marginBottom: 12 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#64748b", marginBottom: 10, textTransform: "uppercase" }}>💰 Precios y Stock</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 10 }}>
+            <div><label style={{ fontSize: 11, fontWeight: 700, color: "#dc2626", display: "block", marginBottom: 4 }}>💲 COSTO</label>
+              <input type="number" step="0.01" min="0" {...f("cos","number")} style={{ ...inpStyle, borderColor: "#fecaca", textAlign: "center" }} /></div>
+            <div><label style={{ fontSize: 11, fontWeight: 700, color: "#16a34a", display: "block", marginBottom: 4 }}>🏷️ VENTA</label>
+              <input type="number" step="0.01" min="0" {...f("ven","number")} style={{ ...inpStyle, borderColor: "#bbf7d0", textAlign: "center" }} /></div>
+            <div><label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", display: "block", marginBottom: 4 }}>📦 STOCK</label>
+              <input type="number" min="0" {...f("stk","int")} style={{ ...inpStyle, textAlign: "center" }} /></div>
+          </div>
+          <div><label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", display: "block", marginBottom: 4 }}>⚠️ STOCK MÍNIMO</label>
+            <input type="number" min="0" {...f("min","int")} style={{ ...inpStyle, textAlign: "center" }} />
+            <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 3 }}>Te avisaremos cuando bajes de este número</div>
+          </div>
+        </div>
+
+        {/* Calculadora */}
+        <div style={{ background: "#eff6ff", borderRadius: 10, padding: 12, marginBottom: 12 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#1d4ed8", marginBottom: 10, textTransform: "uppercase" }}>🧮 Calculadora en tiempo real</div>
+          <div style={{ background: "#fff", borderRadius: 8, padding: 10, marginBottom: 8, border: "1px solid #e2e8f0" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 6 }}>
+              <span style={{ fontSize: 12, color: "#64748b" }}>Venta</span>
+              <span style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 6, padding: "3px 8px", fontSize: 13, fontWeight: 700, color: "#16a34a" }}>{money(row.ven)}</span>
+              <span style={{ color: "#94a3b8" }}>−</span>
+              <span style={{ fontSize: 12, color: "#64748b" }}>Costo</span>
+              <span style={{ background: "#fff5f5", border: "1px solid #fecaca", borderRadius: 6, padding: "3px 8px", fontSize: 13, fontWeight: 700, color: "#dc2626" }}>{money(row.cos)}</span>
+              <span style={{ color: "#94a3b8" }}>=</span>
+              <span style={{ background: "#faf5ff", border: "1px solid #e9d5ff", borderRadius: 6, padding: "3px 8px", fontSize: 13, fontWeight: 700, color: "#7c3aed" }}>{money(g)} gan/u</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+              <span style={{ background: "#faf5ff", border: "1px solid #e9d5ff", borderRadius: 6, padding: "3px 8px", fontSize: 13, fontWeight: 700, color: "#7c3aed" }}>{money(g)}</span>
+              <span style={{ color: "#94a3b8" }}>×</span>
+              <span style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 6, padding: "3px 8px", fontSize: 13, fontWeight: 700, color: "#1d4ed8" }}>{row.stk} uds</span>
+              <span style={{ color: "#94a3b8" }}>=</span>
+              <span style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 6, padding: "3px 8px", fontSize: 13, fontWeight: 700, color: "#16a34a" }}>+{money(c.gt)} ganancia total</span>
+            </div>
+          </div>
+          <div style={{ background: "#fff", borderRadius: 8, padding: 10, border: "1px solid #e2e8f0" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+              <div><div style={{ fontSize: 11, fontWeight: 700, color: "#64748b" }}>MARGEN DE GANANCIA</div></div>
+              <div style={{ fontSize: 22, fontWeight: 700, color: bc }}>{m}%</div>
+            </div>
+            <div style={{ height: 10, background: "#f1f5f9", borderRadius: 5, overflow: "hidden" }}>
+              <div style={{ height: "100%", width: `${bw}%`, background: bc, borderRadius: 5 }} />
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+              <span style={{ fontSize: 10, color: "#dc2626" }}>0% ❌</span>
+              <span style={{ fontSize: 10, color: "#d97706" }}>40% 👍</span>
+              <span style={{ fontSize: 10, color: "#16a34a" }}>60%+ ✅</span>
+            </div>
+          </div>
+          {m < 60 && row.cos > 0 && <div style={{ marginTop: 8, fontSize: 11, color: "#d97706", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 8, padding: "8px 10px" }}>💡 Precio sugerido para 60% de margen: <b>{money(row.cos * 2.5)}</b></div>}
+        </div>
+
+        {/* Proveedor */}
+        <div style={{ background: "#f0fdf4", borderRadius: 10, padding: 12, marginBottom: 16, border: "1px solid #bbf7d0" }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#16a34a", marginBottom: 10, textTransform: "uppercase" }}>👤 Proveedor</div>
+          {[["prv","NOMBRE","Textiles García"],["dir","DIRECCIÓN","Calle, Ciudad, País"],["map","GOOGLE MAPS","https://maps.google.com/..."],["not","NOTAS","Condiciones, descuentos..."]].map(([k,l,ph]) => (
+            <div key={k} style={{ marginBottom: k === "not" ? 0 : 10 }}>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", display: "block", marginBottom: 4 }}>{l}</label>
+              <input {...f(k)} placeholder={ph} />
+            </div>
+          ))}
+        </div>
+
+        <button onClick={onSave} style={{ width: "100%", padding: 13, background: "#1d4ed8", border: "none", borderRadius: 10, color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>✓ Guardar Producto</button>
+      </div>
+    </div>
+  );
 }
 
-function buildReg(){
-  var tips=[
-    {i:"🔄",t:"¿Cuándo reponer?",d:"Cuando el stock llegue al mínimo. Para bolsos de alta rotación mantén al menos 8-10 unidades.",c:"#0284c7",b:"#eff6ff"},
-    {i:"🏷️",t:"¿Cuándo poner en oferta?",d:"Si un producto lleva más de 30 días sin venderse. Aplica 15-20% de descuento para recuperar la inversión.",c:"#d97706",b:"#fffbeb"},
-    {i:"📦",t:"¿Cuántas unidades comprar?",d:"Para productos nuevos: empieza con 5-6 unidades. Si rota bien, duplica el siguiente pedido.",c:"#16a34a",b:"#f0fdf4"},
-    {i:"📈",t:"Margen mínimo recomendado",d:"Apunta a un margen de al menos 60% sobre el costo. Si es menor, revisa el precio de venta.",c:"#7c3aed",b:"#faf5ff"},
-    {i:"⭐",t:"Productos estrella",d:"Identifica tus 3 productos más vendidos y nunca dejes que se agoten. Son tu fuente principal de ingresos.",c:"#db2777",b:"#fdf2f8"},
-    {i:"🗑️",t:"¿Cuándo descontinuar?",d:"Si un producto no se vende en 60 días, véndelo con 30-40% de descuento y no lo repongas.",c:"#dc2626",b:"#fff5f5"},
+function TabInventario({ rows, setRows }) {
+  const [filtro, setFiltro] = useState("Todas");
+  const [search, setSearch] = useState("");
+  const [modal, setModal] = useState(null);
+  const [formRow, setFormRow] = useState(BLANK);
+
+  const byCat = useMemo(() => {
+    const m = {};
+    rows.forEach(r => {
+      if (!m[r.cat]) m[r.cat] = { n: 0, inv: 0, gt: 0 };
+      const c = calcR(r); m[r.cat].n++; m[r.cat].inv += c.inv; m[r.cat].gt += c.gt;
+    });
+    return m;
+  }, [rows]);
+
+  const tiv = useMemo(() => rows.reduce((a, r) => a + calcR(r).inv, 0), [rows]);
+  const tgt = useMemo(() => rows.reduce((a, r) => a + calcR(r).gt, 0), [rows]);
+
+  const visible = useMemo(() => {
+    let v = filtro === "Todas" ? rows : rows.filter(r => r.cat === filtro);
+    if (search) v = v.filter(r => r.nom.toLowerCase().includes(search.toLowerCase()) || r.cod.toLowerCase().includes(search.toLowerCase()));
+    return v;
+  }, [rows, filtro, search]);
+
+  const alerts = rows.filter(r => r.stk <= r.min);
+
+  function openAdd() {
+    const n = rows.length ? Math.max(...rows.map(r => parseInt(r.cod.replace(/\D/g, "") || 0))) : 0;
+    setFormRow({ ...BLANK, cod: "BOL-" + String(n + 1).padStart(3, "0"), cat: filtro !== "Todas" ? filtro : "Bolsos Pequeños" });
+    setModal("add");
+  }
+
+  function openEdit(r) { setFormRow({ ...r }); setModal("edit"); }
+
+  function onDel(id) { if (window.confirm("¿Eliminar este producto?")) setRows(rs => rs.filter(r => r.id !== id)); }
+
+  function onSave() {
+    if (!formRow.nom.trim()) { alert("Ingresa el nombre del producto."); return; }
+    if (modal === "add") {
+      const newId = rows.length ? Math.max(...rows.map(r => r.id)) + 1 : 1;
+      setRows(rs => [...rs, { ...formRow, id: newId }]);
+    } else {
+      setRows(rs => rs.map(r => r.id === formRow.id ? { ...formRow } : r));
+    }
+    setModal(null);
+  }
+
+  return (
+    <div style={{ maxWidth: 1200, margin: "0 auto", padding: "16px 12px 100px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
+        {/* On desktop: sidebar + content */}
+        <style>{`@media(min-width:900px){.inv-layout{display:grid!important;grid-template-columns:280px 1fr;gap:20px;}}.inv-layout{display:block;}`}</style>
+        <div className="inv-layout">
+          {/* SIDEBAR */}
+          <div>
+            <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", marginBottom: 12, overflow: "hidden" }}>
+              <div style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9", fontSize: 13, fontWeight: 700 }}>📊 Por Categoría</div>
+              <div style={{ padding: "10px 12px" }}>
+                {Object.keys(byCat).sort((a, b) => byCat[b].gt - byCat[a].gt).map(cat => (
+                  <CatRow key={cat} cat={cat} t={byCat[cat]} tiv={tiv} active={filtro === cat} onClick={() => setFiltro(filtro === cat ? "Todas" : cat)} />
+                ))}
+                <div onClick={() => setFiltro("Todas")} style={{ padding: "8px 10px", background: filtro === "Todas" ? "#dbeafe" : "#f0fdf4", border: `1px solid ${filtro === "Todas" ? "#93c5fd" : "#bbf7d0"}`, borderRadius: 8, display: "flex", justifyContent: "space-between", cursor: "pointer" }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "#1d4ed8" }}>🏁 Total General</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "#7c3aed" }}>+{money(tgt)}</span>
+                </div>
+              </div>
+            </div>
+            <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", overflow: "hidden" }}>
+              <div style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9", fontSize: 13, fontWeight: 700, color: "#dc2626" }}>🚨 Alertas de Stock</div>
+              <div style={{ padding: "10px 12px" }}>
+                {alerts.length === 0
+                  ? <div style={{ textAlign: "center", padding: 10, color: "#16a34a", fontSize: 13 }}>✅ Todo en orden</div>
+                  : alerts.map(r => (
+                    <div key={r.id} style={{ borderLeft: `3px solid ${r.stk === 0 ? "#fecaca" : "#fde68a"}`, background: r.stk === 0 ? "#fff5f5" : "#fffbeb", borderRadius: 6, padding: "8px 10px", marginBottom: 6 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: r.stk === 0 ? "#dc2626" : "#d97706" }}>{r.nom}</div>
+                      <div style={{ fontSize: 11, color: "#64748b" }}>Stock: <b>{r.stk}</b> / Mín: {r.min} — {r.stk === 0 ? "⛔ Sin stock" : "⚠️ Reponer"}</div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          </div>
+
+          {/* MAIN */}
+          <div>
+            {/* Filter pills */}
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+              {["Todas", ...new Set(rows.map(r => r.cat))].map(c => {
+                const col = CC[c] || "#3b82f6";
+                const active = filtro === c;
+                return <button key={c} onClick={() => setFiltro(c)} style={{ padding: "6px 13px", borderRadius: 20, fontSize: 12, fontWeight: 600, border: `1px solid ${active ? col : "#e2e8f0"}`, background: active ? col : "#fff", color: active ? "#fff" : "#64748b", cursor: "pointer", whiteSpace: "nowrap" }}>{CI[c] || ""} {c}</button>;
+              })}
+            </div>
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Buscar producto..." style={{ width: "100%", padding: "8px 12px", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 13, marginBottom: 12, outline: "none" }} />
+            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12 }}>
+              <style>{`@media(min-width:640px){.pgrid{grid-template-columns:1fr 1fr!important;}}@media(min-width:1100px){.pgrid{grid-template-columns:1fr 1fr 1fr!important;}}`}</style>
+              <div className="pgrid" style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12 }}>
+                {visible.length === 0
+                  ? <div style={{ textAlign: "center", padding: 40, color: "#94a3b8" }}>No hay productos en esta categoría.</div>
+                  : visible.map(r => <ProductCard key={r.id} r={r} onEdit={openEdit} onDel={onDel} />)}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* FAB */}
+      <button onClick={openAdd} style={{ position: "fixed", bottom: 24, right: 24, background: "#1d4ed8", border: "none", color: "#fff", borderRadius: "50%", width: 56, height: 56, fontSize: 28, boxShadow: "0 4px 16px rgba(29,78,216,0.5)", zIndex: 40, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
+
+      {modal && <Modal row={formRow} setRow={setFormRow} onSave={onSave} onClose={() => setModal(null)} title={modal === "add" ? "Agregar Producto" : "Editar Producto"} />}
+    </div>
+  );
+}
+
+function TabReportes({ rows }) {
+  const ti = rows.reduce((a, r) => a + calcR(r).inv, 0);
+  const tg = rows.reduce((a, r) => a + calcR(r).gt, 0);
+  const tv = rows.reduce((a, r) => a + r.stk * r.ven, 0);
+  const mp = rows.length ? Math.round(rows.reduce((a, r) => a + calcR(r).m, 0) / rows.length) : 0;
+  const top5g = [...rows].sort((a, b) => calcR(b).gt - calcR(a).gt).slice(0, 5);
+  const top5m = [...rows].sort((a, b) => calcR(b).m - calcR(a).m).slice(0, 5);
+  const ag = rows.filter(r => r.stk === 0);
+  const bj = rows.filter(r => r.stk > 0 && r.stk <= r.min);
+
+  return (
+    <div style={{ maxWidth: 1200, margin: "0 auto", padding: "16px 12px 100px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
+        {[["💲 Total Invertido", money(ti), "#dc2626", "#fff5f5"], ["🏷️ Venta Potencial", money(tv), "#16a34a", "#f0fdf4"], ["💰 Ganancia Potencial", money(tg), "#7c3aed", "#faf5ff"], ["📈 Margen Promedio", mp + "%", "#0284c7", "#eff6ff"]].map(([l, v, c, bg]) => (
+          <div key={l} style={{ background: bg, borderRadius: 12, padding: 14, textAlign: "center" }}>
+            <div style={{ fontSize: 11, color: "#64748b", marginBottom: 4 }}>{l}</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: c }}>{v}</div>
+          </div>
+        ))}
+      </div>
+      {[["🏆 Top 5 — Mayor Ganancia Potencial", top5g, r => money(calcR(r).gt), "#7c3aed"], ["📈 Top 5 — Mayor Margen", top5m, r => calcR(r).m + "%", "#16a34a"]].map(([title, list, val, col]) => (
+        <div key={title} style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", marginBottom: 12, overflow: "hidden" }}>
+          <div style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9", fontSize: 13, fontWeight: 700 }}>{title}</div>
+          <div style={{ padding: "0 16px" }}>
+            {list.map((r, i) => (
+              <div key={r.id} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid #f1f5f9" }}>
+                <span style={{ fontSize: 13 }}><span style={{ color: "#94a3b8", marginRight: 8 }}>#{i + 1}</span>{r.nom}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: col }}>{val(r)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+      {ag.length > 0 && (
+        <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", marginBottom: 12, overflow: "hidden" }}>
+          <div style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9", fontSize: 13, fontWeight: 700, color: "#dc2626" }}>⛔ Productos Agotados ({ag.length})</div>
+          <div style={{ padding: "0 16px" }}>{ag.map(r => <div key={r.id} style={{ padding: "8px 0", borderBottom: "1px solid #f1f5f9", fontSize: 13 }}>{r.nom} <span style={{ color: "#94a3b8" }}>{r.cod}</span></div>)}</div>
+        </div>
+      )}
+      {bj.length > 0 && (
+        <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", overflow: "hidden" }}>
+          <div style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9", fontSize: 13, fontWeight: 700, color: "#d97706" }}>⚠️ Stock Bajo — Reponer ({bj.length})</div>
+          <div style={{ padding: "0 16px" }}>{bj.map(r => <div key={r.id} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #f1f5f9", fontSize: 13 }}><span>{r.nom}</span><span style={{ color: "#d97706", fontWeight: 700 }}>{r.stk} uds</span></div>)}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TabReglas() {
+  const tips = [
+    { i: "🔄", t: "¿Cuándo reponer?", d: "Cuando el stock llegue al mínimo configurado. Para bolsos de alta rotación mantén al menos 8-10 unidades.", c: "#0284c7", bg: "#eff6ff" },
+    { i: "🏷️", t: "¿Cuándo poner en oferta?", d: "Si un producto lleva más de 30 días sin venderse. Aplica 15-20% de descuento para recuperar la inversión.", c: "#d97706", bg: "#fffbeb" },
+    { i: "📦", t: "¿Cuántas unidades comprar?", d: "Para productos nuevos empieza con 5-6 unidades. Si rota bien, duplica el siguiente pedido.", c: "#16a34a", bg: "#f0fdf4" },
+    { i: "📈", t: "Margen mínimo recomendado", d: "Apunta a un margen de al menos 60% sobre el costo. Si es menor, revisa el precio de venta o busca otro proveedor.", c: "#7c3aed", bg: "#faf5ff" },
+    { i: "⭐", t: "Productos estrella", d: "Identifica tus 3 productos más vendidos y nunca dejes que se agoten. Son tu fuente principal de ingresos.", c: "#db2777", bg: "#fdf2f8" },
+    { i: "🗑️", t: "¿Cuándo descontinuar?", d: "Si un producto no se vende en 60 días, véndelo con 30-40% de descuento y no lo repongas. Reinvierte en lo que sí vende.", c: "#dc2626", bg: "#fff5f5" },
   ];
-  var formulas=[
-    {f:"Ganancia por unidad",eq:"Precio Venta − Precio Costo",ej:"$45 − $18 = $27"},
-    {f:"Margen de ganancia",eq:"(Ganancia ÷ Costo) × 100",ej:"($27 ÷ $18) × 100 = 150%"},
-    {f:"Total invertido",eq:"Costo × Stock",ej:"$18 × 12 = $216"},
-    {f:"Ganancia potencial",eq:"Ganancia/u × Stock",ej:"$27 × 12 = $324"},
-    {f:"Precio sugerido",eq:"Costo × 2.5 (mínimo)",ej:"$18 × 2.5 = $45"},
+  const formulas = [
+    { f: "Ganancia por unidad", eq: "Precio Venta − Precio Costo", ej: "$45 − $18 = $27" },
+    { f: "Margen de ganancia", eq: "(Ganancia ÷ Costo) × 100", ej: "($27 ÷ $18) × 100 = 150%" },
+    { f: "Total invertido", eq: "Costo × Stock", ej: "$18 × 12 = $216" },
+    { f: "Ganancia potencial", eq: "Ganancia/u × Stock", ej: "$27 × 12 = $324" },
+    { f: "Precio sugerido", eq: "Costo × 2.5 (mínimo)", ej: "$18 × 2.5 = $45" },
   ];
-  $('reg-content').innerHTML=
-    '<div class="card" style="margin-bottom:12px;"><div class="ch">📋 Reglas de Inventario</div><div class="cb">'+
-    tips.map(function(t){return'<div style="background:'+t.b+';border-left:4px solid '+t.c+';border-radius:8px;padding:10px 12px;margin-bottom:10px;"><div style="font-size:13px;font-weight:700;color:'+t.c+';margin-bottom:4px;">'+t.i+' '+t.t+'</div><div style="font-size:12px;color:#475569;line-height:1.6;">'+t.d+'</div></div>';}).join('')+
-    '</div></div>'+
-    '<div class="card" style="margin-bottom:12px;"><div class="ch">💡 Consejos para Evitar Pérdidas</div><div class="cb">'+
-    ['Fotografía cada producto — los clientes compran más cuando ven la imagen real.',
-     'Negocia con proveedores: pide descuento por volumen o pago a 30 días.',
-     'No pongas más del 40% de tu inversión en una sola categoría.',
-     'Registra cada venta para saber qué reponer.',
-     'Revisa tus precios cada mes. Si el costo sube, ajusta el precio de venta.',
-     'Guarda siempre el 20% de tus ganancias para reinvertir en stock.'].map(function(c){
-      return'<div style="display:flex;gap:8px;padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:13px;color:#475569;"><span style="color:#16a34a;flex-shrink:0;">✓</span><span>'+c+'</span></div>';
-    }).join('')+'</div></div>'+
-    '<div class="card"><div class="ch">🧮 Fórmulas Clave</div><div class="cb">'+
-    formulas.map(function(r){return'<div style="padding:9px 0;border-bottom:1px solid #f1f5f9;"><div style="font-size:12px;font-weight:700;color:#1e293b;margin-bottom:3px;">'+r.f+'</div><div style="font-size:12px;color:#7c3aed;font-family:monospace;margin-bottom:2px;">'+r.eq+'</div><div style="font-size:11px;color:#94a3b8;">Ej: '+r.ej+'</div></div>';}).join('')+'</div></div>';
+  return (
+    <div style={{ maxWidth: 1200, margin: "0 auto", padding: "16px 12px 100px" }}>
+      <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", marginBottom: 12, overflow: "hidden" }}>
+        <div style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9", fontSize: 13, fontWeight: 700 }}>📋 Reglas de Inventario</div>
+        <div style={{ padding: "12px 16px" }}>
+          {tips.map(t => (
+            <div key={t.t} style={{ background: t.bg, borderLeft: `4px solid ${t.c}`, borderRadius: 8, padding: "10px 12px", marginBottom: 10 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: t.c, marginBottom: 4 }}>{t.i} {t.t}</div>
+              <div style={{ fontSize: 12, color: "#475569", lineHeight: 1.6 }}>{t.d}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", marginBottom: 12, overflow: "hidden" }}>
+        <div style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9", fontSize: 13, fontWeight: 700 }}>💡 Consejos para Evitar Pérdidas</div>
+        <div style={{ padding: "0 16px" }}>
+          {["Fotografía cada producto — los clientes compran más cuando ven la imagen real.", "Negocia con proveedores: pide descuento por volumen o pago a 30 días.", "No pongas más del 40% de tu inversión en una sola categoría.", "Registra cada venta para saber qué reponer.", "Revisa tus precios cada mes. Si el costo sube, ajusta el precio de venta.", "Guarda siempre el 20% de tus ganancias para reinvertir en stock."].map(c => (
+            <div key={c} style={{ display: "flex", gap: 8, padding: "8px 0", borderBottom: "1px solid #f1f5f9", fontSize: 13, color: "#475569" }}>
+              <span style={{ color: "#16a34a", flexShrink: 0 }}>✓</span><span>{c}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", overflow: "hidden" }}>
+        <div style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9", fontSize: 13, fontWeight: 700 }}>🧮 Fórmulas Clave</div>
+        <div style={{ padding: "0 16px" }}>
+          {formulas.map(r => (
+            <div key={r.f} style={{ padding: "10px 0", borderBottom: "1px solid #f1f5f9" }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#1e293b", marginBottom: 3 }}>{r.f}</div>
+              <div style={{ fontSize: 12, color: "#7c3aed", fontFamily: "monospace", marginBottom: 2 }}>{r.eq}</div>
+              <div style={{ fontSize: 11, color: "#94a3b8" }}>Ej: {r.ej}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 }
 
-// PHOTO
-function addPhoto(e){
-  var f=e.target.files[0];if(!f)return;
-  var rd=new FileReader();
-  rd.onload=function(ev){
-    var img=new Image();
-    img.onload=function(){
-      var cv=document.createElement('canvas');
-      var M=600,w=img.width,h=img.height;
-      if(w>M){h=Math.round(h*M/w);w=M;}
-      if(h>M){w=Math.round(w*M/h);h=M;}
-      cv.width=w;cv.height=h;
-      cv.getContext('2d').drawImage(img,0,0,w,h);
-      photo=cv.toDataURL('image/jpeg',0.7);
-      $('fi').src=photo;$('fp').style.display='block';
-    };img.src=ev.target.result;
-  };rd.readAsDataURL(f);
+export default function App() {
+  const [rows, setRows] = useState(DEMO);
+  const [tab, setTab] = useState("inv");
+
+  const stats = useMemo(() => ({
+    ts: rows.reduce((a, r) => a + r.stk, 0),
+    ti: rows.reduce((a, r) => a + calcR(r).inv, 0),
+    tg: rows.reduce((a, r) => a + calcR(r).gt, 0),
+    al: rows.filter(r => r.stk <= r.min).length,
+    mp: rows.length ? Math.round(rows.reduce((a, r) => a + calcR(r).m, 0) / rows.length) : 0,
+  }), [rows]);
+
+  return (
+    <div style={{ minHeight: "100vh", background: "#f1f5f9", fontFamily: "'Segoe UI', sans-serif" }}>
+      <style>{`* { box-sizing: border-box; } button:active { opacity: 0.8; } input:focus, select:focus { outline: 2px solid #3b82f6; }`}</style>
+
+      {/* HEADER */}
+      <div style={{ background: "linear-gradient(135deg,#1e40af,#1d4ed8)", padding: "16px 20px", position: "sticky", top: 0, zIndex: 50, boxShadow: "0 2px 12px rgba(0,0,0,0.2)" }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+          <div style={{ fontSize: 17, fontWeight: 700, color: "#fff", marginBottom: 12 }}>👜 Inventario Profesional</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8, marginBottom: 12 }}>
+            <StatBox val={rows.length} label="Productos" color="#38bdf8" />
+            <StatBox val={stats.ts} label="Unidades" color="#86efac" />
+            <StatBox val={money(stats.ti)} label="Inversión" color="#fde68a" />
+            <StatBox val={money(stats.tg)} label="Ganancia" color="#6ee7b7" />
+            <StatBox val={stats.mp + "%"} label="Margen" color="#c4b5fd" />
+            <StatBox val={stats.al} label="Alertas" color={stats.al > 0 ? "#fca5a5" : "#86efac"} />
+          </div>
+          <div style={{ display: "flex", gap: 3, background: "rgba(255,255,255,0.1)", borderRadius: 10, padding: 3 }}>
+            {[["inv", "📦 Inventario"], ["rep", "📊 Reportes"], ["reg", "📋 Reglas"]].map(([t, l]) => (
+              <button key={t} onClick={() => setTab(t)} style={{ flex: 1, padding: 8, background: tab === t ? "#fff" : "transparent", border: "none", borderRadius: 8, fontSize: 12, fontWeight: 700, color: tab === t ? "#1d4ed8" : "rgba(255,255,255,0.65)", cursor: "pointer" }}>{l}</button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {tab === "inv" && <TabInventario rows={rows} setRows={setRows} />}
+      {tab === "rep" && <TabReportes rows={rows} />}
+      {tab === "reg" && <TabReglas />}
+    </div>
+  );
 }
-function rmPhoto(){photo='';$('fi').src='';$('fp').style.display='none';}
-
-// MODAL CALC
-function calcModal(){
-  var c=parseFloat($('f-cos').value)||0;
-  var v=parseFloat($('f-ven').value)||0;
-  var s=parseInt($('f-stk').value)||0;
-  var g=v-c,m=c>0?Math.round(g/c*100):0,inv=s*c,gt=s*g;
-  var bw=Math.min(Math.max(m,0),100);
-  var bc=m>=60?'#16a34a':m>=30?'#d97706':'#dc2626';
-  var st=m>=60?'✅ Excelente':m>=40?'👍 Aceptable':m>=20?'⚠️ Bajo':'❌ Muy bajo';
-  $('calcs').innerHTML=
-    '<div style="font-size:11px;font-weight:700;color:#1d4ed8;margin-bottom:10px;text-transform:uppercase;">🧮 Cálculo en tiempo real</div>'+
-    '<div style="background:#fff;border-radius:8px;padding:10px;margin-bottom:10px;border:1px solid #e2e8f0;">'+
-    '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px;">'+
-    '<span style="font-size:12px;color:#64748b;">Venta</span><span style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:3px 8px;font-size:13px;font-weight:700;color:#16a34a;">'+money(v)+'</span>'+
-    '<span style="color:#94a3b8;">−</span>'+
-    '<span style="font-size:12px;color:#64748b;">Costo</span><span style="background:#fff5f5;border:1px solid #fecaca;border-radius:6px;padding:3px 8px;font-size:13px;font-weight:700;color:#dc2626;">'+money(c)+'</span>'+
-    '<span style="color:#94a3b8;">=</span>'+
-    '<span style="font-size:12px;color:#64748b;">Ganancia/u</span><span style="background:#faf5ff;border:1px solid #e9d5ff;border-radius:6px;padding:3px 8px;font-size:13px;font-weight:700;color:#7c3aed;">'+money(g)+'</span></div>'+
-    '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">'+
-    '<span style="font-size:12px;color:#64748b;">Gan/u</span><span style="background:#faf5ff;border:1px solid #e9d5ff;border-radius:6px;padding:3px 8px;font-size:13px;font-weight:700;color:#7c3aed;">'+money(g)+'</span>'+
-    '<span style="color:#94a3b8;">×</span>'+
-    '<span style="font-size:12px;color:#64748b;">Stock</span><span style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:3px 8px;font-size:13px;font-weight:700;color:#1d4ed8;">'+s+'</span>'+
-    '<span style="color:#94a3b8;">=</span>'+
-    '<span style="font-size:12px;color:#64748b;">Ganancia Total</span><span style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:3px 8px;font-size:13px;font-weight:700;color:#16a34a;">+'+money(gt)+'</span></div>'+
-    '</div>'+
-    '<div style="background:#fff;border-radius:8px;padding:10px;border:1px solid #e2e8f0;">'+
-    '<div style="display:flex;justify-content:space-between;margin-bottom:8px;">'+
-    '<div><div style="font-size:11px;font-weight:700;color:#64748b;">MARGEN DE GANANCIA</div><div style="font-size:11px;color:#94a3b8;">Por cada $1 invertido ganas $'+(c>0?(g/c).toFixed(2):'0')+' extra</div></div>'+
-    '<div style="text-align:right;"><div style="font-size:24px;font-weight:700;color:'+bc+';">'+m+'%</div><div style="font-size:11px;color:'+bc+';font-weight:600;">'+st+'</div></div></div>'+
-    '<div style="height:10px;background:#f1f5f9;border-radius:5px;overflow:hidden;"><div style="height:100%;width:'+bw+'%;background:'+bc+';border-radius:5px;"></div></div>'+
-    '</div>'+
-    (m<60&&c>0?'<div style="margin-top:8px;font-size:11px;color:#d97706;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:8px;">💡 Precio de venta sugerido para 60% de margen: <b>'+money(c*2.5)+'</b></div>':'');
-}
-
-// MODAL
-function openModal(){
-  editId=null;photo='';
-  $('modal-ttl').textContent='Agregar Producto';
-  ['f-cod','f-nom','f-col','f-prv','f-dir','f-map','f-not'].forEach(function(i){$(i).value='';});
-  $('f-cos').value=0;$('f-ven').value=0;$('f-stk').value=0;$('f-min').value=5;
-  $('fp').style.display='none';$('fi').src='';
-  var n=rows.length?Math.max.apply(null,rows.map(function(r){return parseInt(r.cod.replace(/\D/g,'')||0);})):0;
-  $('f-cod').value='BOL-'+String(n+1).padStart(3,'0');
-  calcModal();
-  $('modal-bg').classList.add('on');
-  document.body.style.overflow='hidden';
-}
-
-function editRow(id){
-  var r=rows.filter(function(x){return x.id===id;})[0];
-  if(!r)return;
-  editId=id;photo=r.foto||'';
-  $('modal-ttl').textContent='Editar Producto';
-  $('f-cod').value=r.cod||'';$('f-cat').value=r.cat;$('f-nom').value=r.nom;
-  $('f-col').value=r.col||'';$('f-niv').value=r.niv||'basico';
-  $('f-cos').value=r.cos;$('f-ven').value=r.ven;$('f-stk').value=r.stk;$('f-min').value=r.min||5;
-  $('f-prv').value=r.prv||'';$('f-dir').value=r.dir||'';$('f-map').value=r.map||'';$('f-not').value=r.not||'';
-  if(r.foto){$('fi').src=r.foto;$('fp').style.display='block';}else{$('fp').style.display='none';}
-  calcModal();
-  $('modal-bg').classList.add('on');
-  document.body.style.overflow='hidden';
-}
-
-function closeModal(){$('modal-bg').classList.remove('on');document.body.style.overflow='';}
-function bgClick(e){if(e.target===$('modal-bg'))closeModal();}
-
-function saveProduct(){
-  var nom=$('f-nom').value.trim();
-  if(!nom){alert('Ingresa el nombre del producto.');return;}
-  var p={cod:$('f-cod').value.trim(),cat:$('f-cat').value,nom:nom,col:$('f-col').value.trim(),niv:$('f-niv').value,
-    cos:parseFloat($('f-cos').value)||0,ven:parseFloat($('f-ven').value)||0,stk:parseInt($('f-stk').value)||0,
-    min:parseInt($('f-min').value)||5,foto:photo,prv:$('f-prv').value.trim(),dir:$('f-dir').value.trim(),
-    map:$('f-map').value.trim(),not:$('f-not').value.trim()};
-  if(editId){rows=rows.map(function(r){return r.id===editId?Object.assign({},p,{id:editId}):r;});}
-  else{p.id=nid++;rows.push(p);}
-  save();closeModal();render();
-}
-
-function delRow(id){
-  if(!confirm('¿Eliminar este producto?'))return;
-  rows=rows.filter(function(r){return r.id!==id;});
-  save();render();
-}
-
-render();
-</script>
-</body>
-</html>
