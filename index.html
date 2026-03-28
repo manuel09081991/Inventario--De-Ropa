@@ -1,11 +1,34 @@
-import { useState, useMemo, useCallback } from "react";
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Inventario Profesional</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',sans-serif;background:#f1f5f9;color:#1e293b;}
+button{cursor:pointer;font-family:'Segoe UI',sans-serif;}
+input,select{font-family:'Segoe UI',sans-serif;}
+input:focus,select:focus{outline:2px solid #3b82f6;}
+@media(min-width:900px){.inv-layout{display:grid!important;grid-template-columns:280px 1fr;gap:20px;align-items:start;}}
+@media(min-width:640px){.pgrid{grid-template-columns:1fr 1fr!important;} .stats-grid{grid-template-columns:repeat(6,1fr)!important;} .modal-box{border-radius:16px!important;} .modal-wrap{align-items:center!important;padding:16px!important;}}
+@media(min-width:1100px){.pgrid{grid-template-columns:1fr 1fr 1fr!important;}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useMemo,useCallback}=React;
 
-const CC = {"Bolsos Pequeños":"#0284c7","Bolsos Medianos":"#0891b2","Bolsos Grandes":"#166534","Carteras":"#b45309","Monederos y Billeteras":"#92400e","Accesorios de Moda":"#9333ea","Accesorios para Celular":"#0e7490","Camisetas":"#1d4ed8","Pantalones":"#16a34a","Chaquetas":"#d97706","Vestidos":"#db2777","Zapatos":"#7c3aed","Ropa Interior":"#ca8a04"};
-const CI = {"Bolsos Pequeños":"👜","Bolsos Medianos":"👝","Bolsos Grandes":"🛍️","Carteras":"💼","Monederos y Billeteras":"👛","Accesorios de Moda":"⌚","Accesorios para Celular":"📱","Camisetas":"👕","Pantalones":"👖","Chaquetas":"🧥","Vestidos":"👗","Zapatos":"👟","Ropa Interior":"🩲"};
-const NL = {basico:{l:"Básico",c:"#0284c7"},tendencia:{l:"Tendencia",c:"#db2777"},economico:{l:"Económico",c:"#16a34a"},premium:{l:"Premium",c:"#7c3aed"}};
-const CATS = Object.keys(CC);
+const CC={"Bolsos Pequeños":"#0284c7","Bolsos Medianos":"#0891b2","Bolsos Grandes":"#166534","Carteras":"#b45309","Monederos y Billeteras":"#92400e","Accesorios de Moda":"#9333ea","Accesorios para Celular":"#0e7490","Camisetas":"#1d4ed8","Pantalones":"#16a34a","Chaquetas":"#d97706","Vestidos":"#db2777","Zapatos":"#7c3aed","Ropa Interior":"#ca8a04"};
+const CI={"Bolsos Pequeños":"👜","Bolsos Medianos":"👝","Bolsos Grandes":"🛍️","Carteras":"💼","Monederos y Billeteras":"👛","Accesorios de Moda":"⌚","Accesorios para Celular":"📱","Camisetas":"👕","Pantalones":"👖","Chaquetas":"🧥","Vestidos":"👗","Zapatos":"👟","Ropa Interior":"🩲"};
+const NL={basico:{l:"Básico",c:"#0284c7"},tendencia:{l:"Tendencia",c:"#db2777"},economico:{l:"Económico",c:"#16a34a"},premium:{l:"Premium",c:"#7c3aed"}};
+const CATS=Object.keys(CC);
 
-const DEMO = [
+const DEMO=[
   {id:1,cod:"BOL-001",cat:"Bolsos Pequeños",nom:"Mini Bolso Acolchado",col:"Rosa",niv:"tendencia",cos:18,ven:45,stk:12,min:5,foto:"",prv:"Distribuidora Moda",dir:"Calle 45, Medellín",map:"",not:"Pago contraentrega"},
   {id:2,cod:"BOL-002",cat:"Bolsos Medianos",nom:"Tote Bag Canvas",col:"Beige",niv:"basico",cos:22,ven:50,stk:8,min:5,foto:"",prv:"Textiles García",dir:"Av. Principal, Bogotá",map:"",not:"10% x10+"},
   {id:3,cod:"BOL-003",cat:"Bolsos Grandes",nom:"Bolso Shopper Cuero PU",col:"Negro",niv:"premium",cos:45,ven:110,stk:4,min:5,foto:"",prv:"Importaciones Elite",dir:"",map:"",not:"Mín. 3 uds"},
@@ -20,473 +43,448 @@ const DEMO = [
   {id:12,cod:"MON-002",cat:"Monederos y Billeteras",nom:"Billetera Cuero Genuino",col:"Café",niv:"premium",cos:20,ven:55,stk:10,min:5,foto:"",prv:"Curtiembres El Valle",dir:"",map:"",not:""},
 ];
 
-const money = n => "$" + Math.abs(Number(n)).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-const calcR = r => { const g = r.ven - r.cos; return { g, inv: r.stk * r.cos, gt: r.stk * g, m: r.cos > 0 ? Math.round(g / r.cos * 100) : 0 }; };
+const money=n=>"$"+Math.abs(Number(n)).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,",");
+const calcR=r=>{const g=r.ven-r.cos;return{g,inv:r.stk*r.cos,gt:r.stk*g,m:r.cos>0?Math.round(g/r.cos*100):0};};
+const BLANK={cod:"",cat:"Bolsos Pequeños",nom:"",col:"",niv:"basico",cos:0,ven:0,stk:0,min:5,foto:"",prv:"",dir:"",map:"",not:""};
 
-const BLANK = { cod: "", cat: "Bolsos Pequeños", nom: "", col: "", niv: "basico", cos: 0, ven: 0, stk: 0, min: 5, foto: "", prv: "", dir: "", map: "", not: "" };
-
-function StatBox({ val, label, color }) {
-  return (
-    <div style={{ background: "rgba(255,255,255,0.15)", borderRadius: 8, padding: "8px 6px", textAlign: "center" }}>
-      <div style={{ fontSize: 15, fontWeight: 700, color }}>{val}</div>
-      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.7)", marginTop: 1 }}>{label}</div>
-    </div>
-  );
+function StatBox({val,label,color}){
+  return <div style={{background:"rgba(255,255,255,0.15)",borderRadius:8,padding:"8px 6px",textAlign:"center"}}>
+    <div style={{fontSize:15,fontWeight:700,color}}>{val}</div>
+    <div style={{fontSize:10,color:"rgba(255,255,255,0.7)",marginTop:1}}>{label}</div>
+  </div>;
 }
 
-function CatRow({ cat, t, tiv, active, onClick }) {
-  const col = CC[cat] || "#64748b";
-  const p = tiv > 0 ? Math.round(t.inv / tiv * 100) : 0;
-  return (
-    <div onClick={onClick} style={{ marginBottom: 8, padding: "10px 12px", background: active ? col + "18" : "#f8fafc", border: `1px solid ${active ? col : "#e2e8f0"}`, borderLeft: `3px solid ${col}`, borderRadius: 8, cursor: "pointer", userSelect: "none" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 2 }}>
-        <span style={{ fontSize: 12, fontWeight: 700, color: col }}>{CI[cat] || "📦"} {cat}</span>
-        <span style={{ fontSize: 12, fontWeight: 700, color: "#7c3aed" }}>+{money(t.gt)}</span>
-      </div>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
-        <span style={{ fontSize: 11, color: "#64748b" }}>{t.n} prod.</span>
-        <span style={{ fontSize: 11, color: "#64748b" }}>Inv: {money(t.inv)}</span>
-      </div>
-      <div style={{ height: 4, background: "#e2e8f0", borderRadius: 2 }}>
-        <div style={{ height: "100%", width: `${p}%`, background: col, borderRadius: 2 }} />
-      </div>
+function CatRow({cat,t,tiv,active,onClick}){
+  const col=CC[cat]||"#64748b";
+  const p=tiv>0?Math.round(t.inv/tiv*100):0;
+  return <div onClick={onClick} style={{marginBottom:8,padding:"10px 12px",background:active?col+"18":"#f8fafc",border:`1px solid ${active?col:"#e2e8f0"}`,borderLeft:`3px solid ${col}`,borderRadius:8,cursor:"pointer",userSelect:"none"}}>
+    <div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}>
+      <span style={{fontSize:12,fontWeight:700,color:col}}>{CI[cat]||"📦"} {cat}</span>
+      <span style={{fontSize:12,fontWeight:700,color:"#7c3aed"}}>+{money(t.gt)}</span>
     </div>
-  );
+    <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+      <span style={{fontSize:11,color:"#64748b"}}>{t.n} prod.</span>
+      <span style={{fontSize:11,color:"#64748b"}}>Inv: {money(t.inv)}</span>
+    </div>
+    <div style={{height:4,background:"#e2e8f0",borderRadius:2}}>
+      <div style={{height:"100%",width:`${p}%`,background:col,borderRadius:2}}/>
+    </div>
+  </div>;
 }
 
-function ProductCard({ r, onEdit, onDel }) {
-  const c = calcR(r);
-  const col = CC[r.cat] || "#64748b";
-  const nv = NL[r.niv] || NL.basico;
-  const sc = r.stk === 0 ? "#dc2626" : r.stk <= r.min ? "#d97706" : "#16a34a";
-  return (
-    <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
-      {r.foto && <img src={r.foto} style={{ width: "100%", height: 160, objectFit: "cover" }} />}
-      <div style={{ borderLeft: `4px solid ${col}`, padding: 12 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
-          <div style={{ flex: 1, marginRight: 8 }}>
-            <div style={{ fontSize: 11, color: "#94a3b8" }}>{r.cod}</div>
-            <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 5 }}>{r.nom}</div>
-            <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-              <span style={{ background: col + "15", color: col, border: `1px solid ${col}30`, borderRadius: 20, padding: "2px 8px", fontSize: 11, fontWeight: 700 }}>{CI[r.cat] || ""} {r.cat}</span>
-              <span style={{ background: nv.c + "15", color: nv.c, border: `1px solid ${nv.c}30`, borderRadius: 20, padding: "2px 8px", fontSize: 11, fontWeight: 700 }}>{nv.l}</span>
-              {r.col && <span style={{ background: "#f1f5f9", color: "#64748b", borderRadius: 20, padding: "2px 8px", fontSize: 11 }}>{r.col}</span>}
-            </div>
-          </div>
-          <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: 11, color: "#94a3b8" }}>Stock</div>
-            <div style={{ fontSize: 22, fontWeight: 700, color: sc }}>{r.stk}</div>
-            {r.stk === 0 && <div style={{ fontSize: 10, color: "#dc2626", fontWeight: 700 }}>⛔ AGOTADO</div>}
-            {r.stk > 0 && r.stk <= r.min && <div style={{ fontSize: 10, color: "#d97706", fontWeight: 700 }}>⚠️ Bajo</div>}
+function ProductCard({r,onEdit,onDel}){
+  const c=calcR(r);
+  const col=CC[r.cat]||"#64748b";
+  const nv=NL[r.niv]||NL.basico;
+  const sc=r.stk===0?"#dc2626":r.stk<=r.min?"#d97706":"#16a34a";
+  return <div style={{background:"#fff",borderRadius:12,border:"1px solid #e2e8f0",overflow:"hidden",boxShadow:"0 1px 4px rgba(0,0,0,0.06)",marginBottom:12}}>
+    {r.foto&&<img src={r.foto} style={{width:"100%",height:160,objectFit:"cover"}}/>}
+    <div style={{borderLeft:`4px solid ${col}`,padding:12}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+        <div style={{flex:1,marginRight:8}}>
+          <div style={{fontSize:11,color:"#94a3b8"}}>{r.cod}</div>
+          <div style={{fontSize:14,fontWeight:700,marginBottom:5}}>{r.nom}</div>
+          <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+            <span style={{background:col+"15",color:col,border:`1px solid ${col}30`,borderRadius:20,padding:"2px 8px",fontSize:11,fontWeight:700}}>{CI[r.cat]||""} {r.cat}</span>
+            <span style={{background:nv.c+"15",color:nv.c,border:`1px solid ${nv.c}30`,borderRadius:20,padding:"2px 8px",fontSize:11,fontWeight:700}}>{nv.l}</span>
+            {r.col&&<span style={{background:"#f1f5f9",color:"#64748b",borderRadius:20,padding:"2px 8px",fontSize:11}}>{r.col}</span>}
           </div>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 6, marginBottom: 8, background: "#f8fafc", borderRadius: 8, padding: 8 }}>
-          {[["💲 Costo", money(r.cos), "#dc2626"], ["🏷️ Venta", money(r.ven), "#16a34a"], ["💰 Gan/u", money(c.g), "#7c3aed"], ["📈 Margen", c.m + "%", "#7c3aed"]].map(([l, v, col]) => (
-            <div key={l} style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 10, color: col }}>{l}</div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: col }}>{v}</div>
-            </div>
-          ))}
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginBottom: 10 }}>
-          <div style={{ background: "#fff5f5", borderRadius: 7, padding: "7px 8px", textAlign: "center" }}>
-            <div style={{ fontSize: 10, color: "#fca5a5" }}>Total Invertido</div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#dc2626" }}>{money(c.inv)}</div>
-          </div>
-          <div style={{ background: "#f0fdf4", borderRadius: 7, padding: "7px 8px", textAlign: "center" }}>
-            <div style={{ fontSize: 10, color: "#86efac" }}>Gan. Potencial</div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#16a34a" }}>+{money(c.gt)}</div>
-          </div>
-        </div>
-        {r.prv && (
-          <div style={{ background: "#f0fdf4", borderRadius: 8, padding: "8px 10px", marginBottom: 10, fontSize: 12 }}>
-            <div style={{ fontWeight: 700, color: "#16a34a", marginBottom: 3 }}>👤 {r.prv}</div>
-            {r.dir && <div style={{ color: "#475569" }}>📍 {r.dir}</div>}
-            {r.map && <a href={r.map} target="_blank" style={{ color: "#0284c7", fontWeight: 600 }}>🗺️ Ver en Maps</a>}
-            {r.not && <div style={{ color: "#94a3b8", marginTop: 2 }}>📝 {r.not}</div>}
-          </div>
-        )}
-        <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={() => onEdit(r)} style={{ flex: 1, padding: 8, background: "#dbeafe", border: "none", borderRadius: 8, color: "#1d4ed8", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>✏️ Editar</button>
-          <button onClick={() => onDel(r.id)} style={{ flex: 1, padding: 8, background: "#fee2e2", border: "none", borderRadius: 8, color: "#dc2626", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>🗑 Eliminar</button>
+        <div style={{textAlign:"right"}}>
+          <div style={{fontSize:11,color:"#94a3b8"}}>Stock</div>
+          <div style={{fontSize:22,fontWeight:700,color:sc}}>{r.stk}</div>
+          {r.stk===0&&<div style={{fontSize:10,color:"#dc2626",fontWeight:700}}>⛔ AGOTADO</div>}
+          {r.stk>0&&r.stk<=r.min&&<div style={{fontSize:10,color:"#d97706",fontWeight:700}}>⚠️ Bajo</div>}
         </div>
       </div>
-    </div>
-  );
-}
-
-function Modal({ row, setRow, onSave, onClose, title }) {
-  const c = calcR(row);
-  const g = row.ven - row.cos;
-  const m = row.cos > 0 ? Math.round(g / row.cos * 100) : 0;
-  const bw = Math.min(Math.max(m, 0), 100);
-  const bc = m >= 60 ? "#16a34a" : m >= 30 ? "#d97706" : "#dc2626";
-
-  const f = (k, type = "text") => ({
-    value: row[k],
-    onChange: e => setRow(r => ({ ...r, [k]: type === "number" ? parseFloat(e.target.value) || 0 : type === "int" ? parseInt(e.target.value) || 0 : e.target.value })),
-    style: { width: "100%", padding: "8px 10px", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 13, color: "#1e293b", background: "#f8fafc", outline: "none" }
-  });
-
-  const inpStyle = { width: "100%", padding: "8px 10px", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 13, color: "#1e293b", background: "#f8fafc", outline: "none" };
-
-  return (
-    <div onClick={e => e.target === e.currentTarget && onClose()} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 100, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
-      <div style={{ background: "#fff", borderRadius: "20px 20px 0 0", width: "100%", maxWidth: 580, padding: "22px 18px 36px", maxHeight: "93vh", overflowY: "auto" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-          <div style={{ fontSize: 16, fontWeight: 700 }}>{title}</div>
-          <button onClick={onClose} style={{ background: "#f1f5f9", border: "none", borderRadius: 20, padding: "4px 13px", fontSize: 13, color: "#64748b", cursor: "pointer" }}>✕</button>
-        </div>
-
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
-          <div><label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", display: "block", marginBottom: 4 }}>CÓDIGO</label><input {...f("cod")} /></div>
-          <div><label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", display: "block", marginBottom: 4 }}>CATEGORÍA</label>
-            <select value={row.cat} onChange={e => setRow(r => ({ ...r, cat: e.target.value }))} style={inpStyle}>
-              {CATS.map(c => <option key={c}>{c}</option>)}
-            </select>
-          </div>
-        </div>
-
-        <div style={{ marginBottom: 10 }}><label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", display: "block", marginBottom: 4 }}>NOMBRE DEL PRODUCTO</label><input {...f("nom")} placeholder="Ej: Bolso Tote Cuero Negro" /></div>
-
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
-          <div><label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", display: "block", marginBottom: 4 }}>COLOR / MODELO</label><input {...f("col")} placeholder="Negro" /></div>
-          <div><label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", display: "block", marginBottom: 4 }}>NIVEL</label>
-            <select value={row.niv} onChange={e => setRow(r => ({ ...r, niv: e.target.value }))} style={inpStyle}>
-              <option value="basico">Básico</option><option value="tendencia">Tendencia</option>
-              <option value="economico">Económico</option><option value="premium">Premium</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Precios */}
-        <div style={{ background: "#f8fafc", borderRadius: 10, padding: 12, marginBottom: 12 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "#64748b", marginBottom: 10, textTransform: "uppercase" }}>💰 Precios y Stock</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 10 }}>
-            <div><label style={{ fontSize: 11, fontWeight: 700, color: "#dc2626", display: "block", marginBottom: 4 }}>💲 COSTO</label>
-              <input type="number" step="0.01" min="0" {...f("cos","number")} style={{ ...inpStyle, borderColor: "#fecaca", textAlign: "center" }} /></div>
-            <div><label style={{ fontSize: 11, fontWeight: 700, color: "#16a34a", display: "block", marginBottom: 4 }}>🏷️ VENTA</label>
-              <input type="number" step="0.01" min="0" {...f("ven","number")} style={{ ...inpStyle, borderColor: "#bbf7d0", textAlign: "center" }} /></div>
-            <div><label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", display: "block", marginBottom: 4 }}>📦 STOCK</label>
-              <input type="number" min="0" {...f("stk","int")} style={{ ...inpStyle, textAlign: "center" }} /></div>
-          </div>
-          <div><label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", display: "block", marginBottom: 4 }}>⚠️ STOCK MÍNIMO</label>
-            <input type="number" min="0" {...f("min","int")} style={{ ...inpStyle, textAlign: "center" }} />
-            <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 3 }}>Te avisaremos cuando bajes de este número</div>
-          </div>
-        </div>
-
-        {/* Calculadora */}
-        <div style={{ background: "#eff6ff", borderRadius: 10, padding: 12, marginBottom: 12 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "#1d4ed8", marginBottom: 10, textTransform: "uppercase" }}>🧮 Calculadora en tiempo real</div>
-          <div style={{ background: "#fff", borderRadius: 8, padding: 10, marginBottom: 8, border: "1px solid #e2e8f0" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 6 }}>
-              <span style={{ fontSize: 12, color: "#64748b" }}>Venta</span>
-              <span style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 6, padding: "3px 8px", fontSize: 13, fontWeight: 700, color: "#16a34a" }}>{money(row.ven)}</span>
-              <span style={{ color: "#94a3b8" }}>−</span>
-              <span style={{ fontSize: 12, color: "#64748b" }}>Costo</span>
-              <span style={{ background: "#fff5f5", border: "1px solid #fecaca", borderRadius: 6, padding: "3px 8px", fontSize: 13, fontWeight: 700, color: "#dc2626" }}>{money(row.cos)}</span>
-              <span style={{ color: "#94a3b8" }}>=</span>
-              <span style={{ background: "#faf5ff", border: "1px solid #e9d5ff", borderRadius: 6, padding: "3px 8px", fontSize: 13, fontWeight: 700, color: "#7c3aed" }}>{money(g)} gan/u</span>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-              <span style={{ background: "#faf5ff", border: "1px solid #e9d5ff", borderRadius: 6, padding: "3px 8px", fontSize: 13, fontWeight: 700, color: "#7c3aed" }}>{money(g)}</span>
-              <span style={{ color: "#94a3b8" }}>×</span>
-              <span style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 6, padding: "3px 8px", fontSize: 13, fontWeight: 700, color: "#1d4ed8" }}>{row.stk} uds</span>
-              <span style={{ color: "#94a3b8" }}>=</span>
-              <span style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 6, padding: "3px 8px", fontSize: 13, fontWeight: 700, color: "#16a34a" }}>+{money(c.gt)} ganancia total</span>
-            </div>
-          </div>
-          <div style={{ background: "#fff", borderRadius: 8, padding: 10, border: "1px solid #e2e8f0" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-              <div><div style={{ fontSize: 11, fontWeight: 700, color: "#64748b" }}>MARGEN DE GANANCIA</div></div>
-              <div style={{ fontSize: 22, fontWeight: 700, color: bc }}>{m}%</div>
-            </div>
-            <div style={{ height: 10, background: "#f1f5f9", borderRadius: 5, overflow: "hidden" }}>
-              <div style={{ height: "100%", width: `${bw}%`, background: bc, borderRadius: 5 }} />
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
-              <span style={{ fontSize: 10, color: "#dc2626" }}>0% ❌</span>
-              <span style={{ fontSize: 10, color: "#d97706" }}>40% 👍</span>
-              <span style={{ fontSize: 10, color: "#16a34a" }}>60%+ ✅</span>
-            </div>
-          </div>
-          {m < 60 && row.cos > 0 && <div style={{ marginTop: 8, fontSize: 11, color: "#d97706", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 8, padding: "8px 10px" }}>💡 Precio sugerido para 60% de margen: <b>{money(row.cos * 2.5)}</b></div>}
-        </div>
-
-        {/* Proveedor */}
-        <div style={{ background: "#f0fdf4", borderRadius: 10, padding: 12, marginBottom: 16, border: "1px solid #bbf7d0" }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "#16a34a", marginBottom: 10, textTransform: "uppercase" }}>👤 Proveedor</div>
-          {[["prv","NOMBRE","Textiles García"],["dir","DIRECCIÓN","Calle, Ciudad, País"],["map","GOOGLE MAPS","https://maps.google.com/..."],["not","NOTAS","Condiciones, descuentos..."]].map(([k,l,ph]) => (
-            <div key={k} style={{ marginBottom: k === "not" ? 0 : 10 }}>
-              <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", display: "block", marginBottom: 4 }}>{l}</label>
-              <input {...f(k)} placeholder={ph} />
-            </div>
-          ))}
-        </div>
-
-        <button onClick={onSave} style={{ width: "100%", padding: 13, background: "#1d4ed8", border: "none", borderRadius: 10, color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>✓ Guardar Producto</button>
-      </div>
-    </div>
-  );
-}
-
-function TabInventario({ rows, setRows }) {
-  const [filtro, setFiltro] = useState("Todas");
-  const [search, setSearch] = useState("");
-  const [modal, setModal] = useState(null);
-  const [formRow, setFormRow] = useState(BLANK);
-
-  const byCat = useMemo(() => {
-    const m = {};
-    rows.forEach(r => {
-      if (!m[r.cat]) m[r.cat] = { n: 0, inv: 0, gt: 0 };
-      const c = calcR(r); m[r.cat].n++; m[r.cat].inv += c.inv; m[r.cat].gt += c.gt;
-    });
-    return m;
-  }, [rows]);
-
-  const tiv = useMemo(() => rows.reduce((a, r) => a + calcR(r).inv, 0), [rows]);
-  const tgt = useMemo(() => rows.reduce((a, r) => a + calcR(r).gt, 0), [rows]);
-
-  const visible = useMemo(() => {
-    let v = filtro === "Todas" ? rows : rows.filter(r => r.cat === filtro);
-    if (search) v = v.filter(r => r.nom.toLowerCase().includes(search.toLowerCase()) || r.cod.toLowerCase().includes(search.toLowerCase()));
-    return v;
-  }, [rows, filtro, search]);
-
-  const alerts = rows.filter(r => r.stk <= r.min);
-
-  function openAdd() {
-    const n = rows.length ? Math.max(...rows.map(r => parseInt(r.cod.replace(/\D/g, "") || 0))) : 0;
-    setFormRow({ ...BLANK, cod: "BOL-" + String(n + 1).padStart(3, "0"), cat: filtro !== "Todas" ? filtro : "Bolsos Pequeños" });
-    setModal("add");
-  }
-
-  function openEdit(r) { setFormRow({ ...r }); setModal("edit"); }
-
-  function onDel(id) { if (window.confirm("¿Eliminar este producto?")) setRows(rs => rs.filter(r => r.id !== id)); }
-
-  function onSave() {
-    if (!formRow.nom.trim()) { alert("Ingresa el nombre del producto."); return; }
-    if (modal === "add") {
-      const newId = rows.length ? Math.max(...rows.map(r => r.id)) + 1 : 1;
-      setRows(rs => [...rs, { ...formRow, id: newId }]);
-    } else {
-      setRows(rs => rs.map(r => r.id === formRow.id ? { ...formRow } : r));
-    }
-    setModal(null);
-  }
-
-  return (
-    <div style={{ maxWidth: 1200, margin: "0 auto", padding: "16px 12px 100px" }}>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
-        {/* On desktop: sidebar + content */}
-        <style>{`@media(min-width:900px){.inv-layout{display:grid!important;grid-template-columns:280px 1fr;gap:20px;}}.inv-layout{display:block;}`}</style>
-        <div className="inv-layout">
-          {/* SIDEBAR */}
-          <div>
-            <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", marginBottom: 12, overflow: "hidden" }}>
-              <div style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9", fontSize: 13, fontWeight: 700 }}>📊 Por Categoría</div>
-              <div style={{ padding: "10px 12px" }}>
-                {Object.keys(byCat).sort((a, b) => byCat[b].gt - byCat[a].gt).map(cat => (
-                  <CatRow key={cat} cat={cat} t={byCat[cat]} tiv={tiv} active={filtro === cat} onClick={() => setFiltro(filtro === cat ? "Todas" : cat)} />
-                ))}
-                <div onClick={() => setFiltro("Todas")} style={{ padding: "8px 10px", background: filtro === "Todas" ? "#dbeafe" : "#f0fdf4", border: `1px solid ${filtro === "Todas" ? "#93c5fd" : "#bbf7d0"}`, borderRadius: 8, display: "flex", justifyContent: "space-between", cursor: "pointer" }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: "#1d4ed8" }}>🏁 Total General</span>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: "#7c3aed" }}>+{money(tgt)}</span>
-                </div>
-              </div>
-            </div>
-            <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", overflow: "hidden" }}>
-              <div style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9", fontSize: 13, fontWeight: 700, color: "#dc2626" }}>🚨 Alertas de Stock</div>
-              <div style={{ padding: "10px 12px" }}>
-                {alerts.length === 0
-                  ? <div style={{ textAlign: "center", padding: 10, color: "#16a34a", fontSize: 13 }}>✅ Todo en orden</div>
-                  : alerts.map(r => (
-                    <div key={r.id} style={{ borderLeft: `3px solid ${r.stk === 0 ? "#fecaca" : "#fde68a"}`, background: r.stk === 0 ? "#fff5f5" : "#fffbeb", borderRadius: 6, padding: "8px 10px", marginBottom: 6 }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: r.stk === 0 ? "#dc2626" : "#d97706" }}>{r.nom}</div>
-                      <div style={{ fontSize: 11, color: "#64748b" }}>Stock: <b>{r.stk}</b> / Mín: {r.min} — {r.stk === 0 ? "⛔ Sin stock" : "⚠️ Reponer"}</div>
-                    </div>
-                  ))}
-              </div>
-            </div>
-          </div>
-
-          {/* MAIN */}
-          <div>
-            {/* Filter pills */}
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
-              {["Todas", ...new Set(rows.map(r => r.cat))].map(c => {
-                const col = CC[c] || "#3b82f6";
-                const active = filtro === c;
-                return <button key={c} onClick={() => setFiltro(c)} style={{ padding: "6px 13px", borderRadius: 20, fontSize: 12, fontWeight: 600, border: `1px solid ${active ? col : "#e2e8f0"}`, background: active ? col : "#fff", color: active ? "#fff" : "#64748b", cursor: "pointer", whiteSpace: "nowrap" }}>{CI[c] || ""} {c}</button>;
-              })}
-            </div>
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Buscar producto..." style={{ width: "100%", padding: "8px 12px", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 13, marginBottom: 12, outline: "none" }} />
-            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12 }}>
-              <style>{`@media(min-width:640px){.pgrid{grid-template-columns:1fr 1fr!important;}}@media(min-width:1100px){.pgrid{grid-template-columns:1fr 1fr 1fr!important;}}`}</style>
-              <div className="pgrid" style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12 }}>
-                {visible.length === 0
-                  ? <div style={{ textAlign: "center", padding: 40, color: "#94a3b8" }}>No hay productos en esta categoría.</div>
-                  : visible.map(r => <ProductCard key={r.id} r={r} onEdit={openEdit} onDel={onDel} />)}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* FAB */}
-      <button onClick={openAdd} style={{ position: "fixed", bottom: 24, right: 24, background: "#1d4ed8", border: "none", color: "#fff", borderRadius: "50%", width: 56, height: 56, fontSize: 28, boxShadow: "0 4px 16px rgba(29,78,216,0.5)", zIndex: 40, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
-
-      {modal && <Modal row={formRow} setRow={setFormRow} onSave={onSave} onClose={() => setModal(null)} title={modal === "add" ? "Agregar Producto" : "Editar Producto"} />}
-    </div>
-  );
-}
-
-function TabReportes({ rows }) {
-  const ti = rows.reduce((a, r) => a + calcR(r).inv, 0);
-  const tg = rows.reduce((a, r) => a + calcR(r).gt, 0);
-  const tv = rows.reduce((a, r) => a + r.stk * r.ven, 0);
-  const mp = rows.length ? Math.round(rows.reduce((a, r) => a + calcR(r).m, 0) / rows.length) : 0;
-  const top5g = [...rows].sort((a, b) => calcR(b).gt - calcR(a).gt).slice(0, 5);
-  const top5m = [...rows].sort((a, b) => calcR(b).m - calcR(a).m).slice(0, 5);
-  const ag = rows.filter(r => r.stk === 0);
-  const bj = rows.filter(r => r.stk > 0 && r.stk <= r.min);
-
-  return (
-    <div style={{ maxWidth: 1200, margin: "0 auto", padding: "16px 12px 100px" }}>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
-        {[["💲 Total Invertido", money(ti), "#dc2626", "#fff5f5"], ["🏷️ Venta Potencial", money(tv), "#16a34a", "#f0fdf4"], ["💰 Ganancia Potencial", money(tg), "#7c3aed", "#faf5ff"], ["📈 Margen Promedio", mp + "%", "#0284c7", "#eff6ff"]].map(([l, v, c, bg]) => (
-          <div key={l} style={{ background: bg, borderRadius: 12, padding: 14, textAlign: "center" }}>
-            <div style={{ fontSize: 11, color: "#64748b", marginBottom: 4 }}>{l}</div>
-            <div style={{ fontSize: 22, fontWeight: 700, color: c }}>{v}</div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,marginBottom:8,background:"#f8fafc",borderRadius:8,padding:8}}>
+        {[["💲 Costo",money(r.cos),"#dc2626"],["🏷️ Venta",money(r.ven),"#16a34a"],["💰 Gan/u",money(c.g),"#7c3aed"],["📈 Margen",c.m+"%","#7c3aed"]].map(([l,v,col])=>(
+          <div key={l} style={{textAlign:"center"}}>
+            <div style={{fontSize:10,color:col}}>{l}</div>
+            <div style={{fontSize:13,fontWeight:700,color:col}}>{v}</div>
           </div>
         ))}
       </div>
-      {[["🏆 Top 5 — Mayor Ganancia Potencial", top5g, r => money(calcR(r).gt), "#7c3aed"], ["📈 Top 5 — Mayor Margen", top5m, r => calcR(r).m + "%", "#16a34a"]].map(([title, list, val, col]) => (
-        <div key={title} style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", marginBottom: 12, overflow: "hidden" }}>
-          <div style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9", fontSize: 13, fontWeight: 700 }}>{title}</div>
-          <div style={{ padding: "0 16px" }}>
-            {list.map((r, i) => (
-              <div key={r.id} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid #f1f5f9" }}>
-                <span style={{ fontSize: 13 }}><span style={{ color: "#94a3b8", marginRight: 8 }}>#{i + 1}</span>{r.nom}</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: col }}>{val(r)}</span>
-              </div>
-            ))}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:10}}>
+        <div style={{background:"#fff5f5",borderRadius:7,padding:"7px 8px",textAlign:"center"}}>
+          <div style={{fontSize:10,color:"#fca5a5"}}>Total Invertido</div>
+          <div style={{fontSize:13,fontWeight:700,color:"#dc2626"}}>{money(c.inv)}</div>
+        </div>
+        <div style={{background:"#f0fdf4",borderRadius:7,padding:"7px 8px",textAlign:"center"}}>
+          <div style={{fontSize:10,color:"#86efac"}}>Gan. Potencial</div>
+          <div style={{fontSize:13,fontWeight:700,color:"#16a34a"}}>+{money(c.gt)}</div>
+        </div>
+      </div>
+      {r.prv&&<div style={{background:"#f0fdf4",borderRadius:8,padding:"8px 10px",marginBottom:10,fontSize:12}}>
+        <div style={{fontWeight:700,color:"#16a34a",marginBottom:3}}>👤 {r.prv}</div>
+        {r.dir&&<div style={{color:"#475569"}}>📍 {r.dir}</div>}
+        {r.map&&<a href={r.map} target="_blank" style={{color:"#0284c7",fontWeight:600}}>🗺️ Ver en Maps</a>}
+        {r.not&&<div style={{color:"#94a3b8",marginTop:2}}>📝 {r.not}</div>}
+      </div>}
+      <div style={{display:"flex",gap:8}}>
+        <button onClick={()=>onEdit(r)} style={{flex:1,padding:8,background:"#dbeafe",border:"none",borderRadius:8,color:"#1d4ed8",fontWeight:700,fontSize:13,cursor:"pointer"}}>✏️ Editar</button>
+        <button onClick={()=>onDel(r.id)} style={{flex:1,padding:8,background:"#fee2e2",border:"none",borderRadius:8,color:"#dc2626",fontWeight:700,fontSize:13,cursor:"pointer"}}>🗑 Eliminar</button>
+      </div>
+    </div>
+  </div>;
+}
+
+function Modal({row,setRow,onSave,onClose,title}){
+  const g=row.ven-row.cos;
+  const m=row.cos>0?Math.round(g/row.cos*100):0;
+  const gt=row.stk*g;
+  const bw=Math.min(Math.max(m,0),100);
+  const bc=m>=60?"#16a34a":m>=30?"#d97706":"#dc2626";
+  const upd=(k,v)=>setRow(r=>({...r,[k]:v}));
+  const inpS={width:"100%",padding:"8px 10px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:13,color:"#1e293b",background:"#f8fafc"};
+  const lbl={fontSize:11,fontWeight:700,color:"#64748b",display:"block",marginBottom:4,textTransform:"uppercase"};
+
+  function handlePhoto(e){
+    const f=e.target.files[0];if(!f)return;
+    const rd=new FileReader();
+    rd.onload=ev=>{
+      const img=new Image();
+      img.onload=()=>{
+        const cv=document.createElement("canvas");
+        const M=600;let w=img.width,h=img.height;
+        if(w>M){h=Math.round(h*M/w);w=M;}
+        if(h>M){w=Math.round(w*M/h);h=M;}
+        cv.width=w;cv.height=h;
+        cv.getContext("2d").drawImage(img,0,0,w,h);
+        upd("foto",cv.toDataURL("image/jpeg",0.7));
+      };img.src=ev.target.result;
+    };rd.readAsDataURL(f);
+  }
+
+  return <div onClick={e=>e.target===e.currentTarget&&onClose()} className="modal-wrap" style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:100,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
+    <div className="modal-box" style={{background:"#fff",borderRadius:"20px 20px 0 0",width:"100%",maxWidth:580,padding:"22px 18px 36px",maxHeight:"93vh",overflowY:"auto"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+        <div style={{fontSize:16,fontWeight:700}}>{title}</div>
+        <button onClick={onClose} style={{background:"#f1f5f9",border:"none",borderRadius:20,padding:"4px 13px",fontSize:13,color:"#64748b",cursor:"pointer"}}>✕</button>
+      </div>
+
+      {/* Foto */}
+      <div style={{marginBottom:10}}>
+        <span style={lbl}>📸 Foto del producto</span>
+        {row.foto&&<div style={{marginBottom:8,position:"relative"}}>
+          <img src={row.foto} style={{width:"100%",maxHeight:180,objectFit:"cover",borderRadius:10,border:"1px solid #e2e8f0"}}/>
+          <button onClick={()=>upd("foto","")} style={{position:"absolute",top:6,right:6,background:"rgba(0,0,0,0.5)",border:"none",color:"#fff",borderRadius:"50%",width:28,height:28,fontSize:13,cursor:"pointer"}}>✕</button>
+        </div>}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+          <label style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,padding:9,background:"#eff6ff",border:"1px solid #bfdbfe",borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:600,color:"#1d4ed8"}}>📷 Cámara<input type="file" accept="image/*" capture="environment" onChange={handlePhoto} style={{display:"none"}}/></label>
+          <label style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,padding:9,background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:600,color:"#16a34a"}}>🖼️ Galería<input type="file" accept="image/*" onChange={handlePhoto} style={{display:"none"}}/></label>
+        </div>
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
+        <div><span style={lbl}>Código</span><input value={row.cod} onChange={e=>upd("cod",e.target.value)} style={inpS} placeholder="BOL-001"/></div>
+        <div><span style={lbl}>Categoría</span>
+          <select value={row.cat} onChange={e=>upd("cat",e.target.value)} style={inpS}>
+            {CATS.map(c=><option key={c}>{c}</option>)}
+          </select>
+        </div>
+      </div>
+      <div style={{marginBottom:10}}><span style={lbl}>Nombre del producto</span><input value={row.nom} onChange={e=>upd("nom",e.target.value)} style={inpS} placeholder="Ej: Bolso Tote Cuero Negro"/></div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
+        <div><span style={lbl}>Color / Modelo</span><input value={row.col} onChange={e=>upd("col",e.target.value)} style={inpS} placeholder="Negro"/></div>
+        <div><span style={lbl}>Nivel</span>
+          <select value={row.niv} onChange={e=>upd("niv",e.target.value)} style={inpS}>
+            <option value="basico">Básico</option><option value="tendencia">Tendencia</option>
+            <option value="economico">Económico</option><option value="premium">Premium</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Precios */}
+      <div style={{background:"#f8fafc",borderRadius:10,padding:12,marginBottom:12}}>
+        <span style={{...lbl,marginBottom:10}}>💰 Precios y Stock</span>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:10}}>
+          <div><span style={{...lbl,color:"#dc2626"}}>💲 Costo</span><input type="number" step="0.01" min="0" value={row.cos} onChange={e=>upd("cos",parseFloat(e.target.value)||0)} style={{...inpS,borderColor:"#fecaca",textAlign:"center"}}/></div>
+          <div><span style={{...lbl,color:"#16a34a"}}>🏷️ Venta</span><input type="number" step="0.01" min="0" value={row.ven} onChange={e=>upd("ven",parseFloat(e.target.value)||0)} style={{...inpS,borderColor:"#bbf7d0",textAlign:"center"}}/></div>
+          <div><span style={lbl}>📦 Stock</span><input type="number" min="0" value={row.stk} onChange={e=>upd("stk",parseInt(e.target.value)||0)} style={{...inpS,textAlign:"center"}}/></div>
+        </div>
+        <div><span style={lbl}>⚠️ Stock mínimo</span><input type="number" min="0" value={row.min} onChange={e=>upd("min",parseInt(e.target.value)||0)} style={{...inpS,textAlign:"center"}}/>
+          <div style={{fontSize:11,color:"#94a3b8",marginTop:3}}>Te avisaremos cuando bajes de este número</div>
+        </div>
+      </div>
+
+      {/* Calculadora */}
+      <div style={{background:"#eff6ff",borderRadius:10,padding:12,marginBottom:12}}>
+        <div style={{fontSize:11,fontWeight:700,color:"#1d4ed8",marginBottom:10,textTransform:"uppercase"}}>🧮 Calculadora en tiempo real</div>
+        <div style={{background:"#fff",borderRadius:8,padding:10,marginBottom:8,border:"1px solid #e2e8f0"}}>
+          <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap",marginBottom:6}}>
+            <span style={{fontSize:12,color:"#64748b"}}>Venta</span>
+            <span style={{background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:6,padding:"3px 8px",fontSize:13,fontWeight:700,color:"#16a34a"}}>{money(row.ven)}</span>
+            <span style={{color:"#94a3b8"}}>−</span>
+            <span style={{fontSize:12,color:"#64748b"}}>Costo</span>
+            <span style={{background:"#fff5f5",border:"1px solid #fecaca",borderRadius:6,padding:"3px 8px",fontSize:13,fontWeight:700,color:"#dc2626"}}>{money(row.cos)}</span>
+            <span style={{color:"#94a3b8"}}>=</span>
+            <span style={{background:"#faf5ff",border:"1px solid #e9d5ff",borderRadius:6,padding:"3px 8px",fontSize:13,fontWeight:700,color:"#7c3aed"}}>{money(g)} gan/u</span>
           </div>
+          <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
+            <span style={{background:"#faf5ff",border:"1px solid #e9d5ff",borderRadius:6,padding:"3px 8px",fontSize:13,fontWeight:700,color:"#7c3aed"}}>{money(g)}</span>
+            <span style={{color:"#94a3b8"}}>×</span>
+            <span style={{background:"#eff6ff",border:"1px solid #bfdbfe",borderRadius:6,padding:"3px 8px",fontSize:13,fontWeight:700,color:"#1d4ed8"}}>{row.stk} uds</span>
+            <span style={{color:"#94a3b8"}}>=</span>
+            <span style={{background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:6,padding:"3px 8px",fontSize:13,fontWeight:700,color:"#16a34a"}}>+{money(gt)} ganancia total</span>
+          </div>
+        </div>
+        <div style={{background:"#fff",borderRadius:8,padding:10,border:"1px solid #e2e8f0"}}>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
+            <div style={{fontSize:11,fontWeight:700,color:"#64748b"}}>MARGEN DE GANANCIA</div>
+            <div style={{fontSize:22,fontWeight:700,color:bc}}>{m}%</div>
+          </div>
+          <div style={{height:10,background:"#f1f5f9",borderRadius:5,overflow:"hidden"}}>
+            <div style={{height:"100%",width:`${bw}%`,background:bc,borderRadius:5}}/>
+          </div>
+          <div style={{display:"flex",justifyContent:"space-between",marginTop:4}}>
+            <span style={{fontSize:10,color:"#dc2626"}}>0% ❌</span>
+            <span style={{fontSize:10,color:"#d97706"}}>40% 👍</span>
+            <span style={{fontSize:10,color:"#16a34a"}}>60%+ ✅</span>
+          </div>
+        </div>
+        {m<60&&row.cos>0&&<div style={{marginTop:8,fontSize:11,color:"#d97706",background:"#fffbeb",border:"1px solid #fde68a",borderRadius:8,padding:"8px 10px"}}>💡 Precio sugerido para 60% margen: <b>{money(row.cos*2.5)}</b></div>}
+      </div>
+
+      {/* Proveedor */}
+      <div style={{background:"#f0fdf4",borderRadius:10,padding:12,marginBottom:16,border:"1px solid #bbf7d0"}}>
+        <div style={{fontSize:11,fontWeight:700,color:"#16a34a",marginBottom:10,textTransform:"uppercase"}}>👤 Proveedor</div>
+        {[["prv","Nombre","Textiles García"],["dir","Dirección","Calle, Ciudad, País"],["map","Google Maps","https://maps.google.com/..."],["not","Notas","Condiciones, descuentos..."]].map(([k,l,ph])=>(
+          <div key={k} style={{marginBottom:k==="not"?0:10}}>
+            <span style={lbl}>{l}</span>
+            <input value={row[k]} onChange={e=>upd(k,e.target.value)} style={inpS} placeholder={ph}/>
+          </div>
+        ))}
+      </div>
+
+      <button onClick={onSave} style={{width:"100%",padding:13,background:"#1d4ed8",border:"none",borderRadius:10,color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer"}}>✓ Guardar Producto</button>
+    </div>
+  </div>;
+}
+
+function TabInventario({rows,setRows}){
+  const [filtro,setFiltro]=useState("Todas");
+  const [search,setSearch]=useState("");
+  const [modal,setModal]=useState(null);
+  const [formRow,setFormRow]=useState(BLANK);
+
+  const byCat=useMemo(()=>{
+    const m={};
+    rows.forEach(r=>{
+      if(!m[r.cat])m[r.cat]={n:0,inv:0,gt:0};
+      const c=calcR(r);m[r.cat].n++;m[r.cat].inv+=c.inv;m[r.cat].gt+=c.gt;
+    });
+    return m;
+  },[rows]);
+
+  const tiv=useMemo(()=>rows.reduce((a,r)=>a+calcR(r).inv,0),[rows]);
+  const tgt=useMemo(()=>rows.reduce((a,r)=>a+calcR(r).gt,0),[rows]);
+
+  const visible=useMemo(()=>{
+    let v=filtro==="Todas"?rows:rows.filter(r=>r.cat===filtro);
+    if(search)v=v.filter(r=>r.nom.toLowerCase().includes(search.toLowerCase())||r.cod.toLowerCase().includes(search.toLowerCase()));
+    return v;
+  },[rows,filtro,search]);
+
+  const alerts=rows.filter(r=>r.stk<=r.min);
+
+  function openAdd(){
+    const n=rows.length?Math.max(...rows.map(r=>parseInt(r.cod.replace(/\D/g,"")||0))):0;
+    setFormRow({...BLANK,cod:"BOL-"+String(n+1).padStart(3,"0"),cat:filtro!=="Todas"?filtro:"Bolsos Pequeños"});
+    setModal("add");
+  }
+  function openEdit(r){setFormRow({...r});setModal("edit");}
+  function onDel(id){if(window.confirm("¿Eliminar este producto?"))setRows(rs=>rs.filter(r=>r.id!==id));}
+  function onSave(){
+    if(!formRow.nom.trim()){alert("Ingresa el nombre del producto.");return;}
+    if(modal==="add"){const id=rows.length?Math.max(...rows.map(r=>r.id))+1:1;setRows(rs=>[...rs,{...formRow,id}]);}
+    else{setRows(rs=>rs.map(r=>r.id===formRow.id?{...formRow}:r));}
+    setModal(null);
+  }
+
+  return <div style={{maxWidth:1200,margin:"0 auto",padding:"16px 12px 100px"}}>
+    <div className="inv-layout" style={{display:"block"}}>
+      {/* Sidebar */}
+      <div>
+        <div style={{background:"#fff",borderRadius:12,border:"1px solid #e2e8f0",marginBottom:12,overflow:"hidden"}}>
+          <div style={{padding:"12px 16px",borderBottom:"1px solid #f1f5f9",fontSize:13,fontWeight:700}}>📊 Por Categoría</div>
+          <div style={{padding:"10px 12px"}}>
+            {Object.keys(byCat).sort((a,b)=>byCat[b].gt-byCat[a].gt).map(cat=>(
+              <CatRow key={cat} cat={cat} t={byCat[cat]} tiv={tiv} active={filtro===cat} onClick={()=>setFiltro(filtro===cat?"Todas":cat)}/>
+            ))}
+            <div onClick={()=>setFiltro("Todas")} style={{padding:"8px 10px",background:filtro==="Todas"?"#dbeafe":"#f0fdf4",border:`1px solid ${filtro==="Todas"?"#93c5fd":"#bbf7d0"}`,borderRadius:8,display:"flex",justifyContent:"space-between",cursor:"pointer",marginTop:4}}>
+              <span style={{fontSize:11,fontWeight:700,color:"#1d4ed8"}}>🏁 Total General</span>
+              <span style={{fontSize:12,fontWeight:700,color:"#7c3aed"}}>+{money(tgt)}</span>
+            </div>
+          </div>
+        </div>
+        <div style={{background:"#fff",borderRadius:12,border:"1px solid #e2e8f0",overflow:"hidden",marginBottom:12}}>
+          <div style={{padding:"12px 16px",borderBottom:"1px solid #f1f5f9",fontSize:13,fontWeight:700,color:"#dc2626"}}>🚨 Alertas de Stock</div>
+          <div style={{padding:"10px 12px"}}>
+            {alerts.length===0
+              ?<div style={{textAlign:"center",padding:10,color:"#16a34a",fontSize:13}}>✅ Todo en orden</div>
+              :alerts.map(r=><div key={r.id} style={{borderLeft:`3px solid ${r.stk===0?"#fecaca":"#fde68a"}`,background:r.stk===0?"#fff5f5":"#fffbeb",borderRadius:6,padding:"8px 10px",marginBottom:6}}>
+                <div style={{fontSize:12,fontWeight:700,color:r.stk===0?"#dc2626":"#d97706"}}>{r.nom}</div>
+                <div style={{fontSize:11,color:"#64748b"}}>Stock: <b>{r.stk}</b> / Mín: {r.min} — {r.stk===0?"⛔ Sin stock":"⚠️ Reponer"}</div>
+              </div>)
+            }
+          </div>
+        </div>
+      </div>
+
+      {/* Main */}
+      <div>
+        <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>
+          {["Todas",...new Set(rows.map(r=>r.cat))].map(c=>{
+            const col=CC[c]||"#3b82f6";const act=filtro===c;
+            return <button key={c} onClick={()=>setFiltro(c)} style={{padding:"6px 13px",borderRadius:20,fontSize:12,fontWeight:600,border:`1px solid ${act?col:"#e2e8f0"}`,background:act?col:"#fff",color:act?"#fff":"#64748b",cursor:"pointer",whiteSpace:"nowrap"}}>{CI[c]||""} {c}</button>;
+          })}
+        </div>
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Buscar producto..." style={{width:"100%",padding:"8px 12px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:13,marginBottom:12,outline:"none"}}/>
+        <div className="pgrid" style={{display:"grid",gridTemplateColumns:"1fr",gap:0}}>
+          {visible.length===0
+            ?<div style={{textAlign:"center",padding:40,color:"#94a3b8"}}>No hay productos en esta categoría.</div>
+            :visible.map(r=><ProductCard key={r.id} r={r} onEdit={openEdit} onDel={onDel}/>)
+          }
+        </div>
+      </div>
+    </div>
+    <button onClick={openAdd} style={{position:"fixed",bottom:24,right:24,background:"#1d4ed8",border:"none",color:"#fff",borderRadius:"50%",width:56,height:56,fontSize:28,boxShadow:"0 4px 16px rgba(29,78,216,0.5)",zIndex:40,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
+    {modal&&<Modal row={formRow} setRow={setFormRow} onSave={onSave} onClose={()=>setModal(null)} title={modal==="add"?"Agregar Producto":"Editar Producto"}/>}
+  </div>;
+}
+
+function TabReportes({rows}){
+  const ti=rows.reduce((a,r)=>a+calcR(r).inv,0);
+  const tg=rows.reduce((a,r)=>a+calcR(r).gt,0);
+  const tv=rows.reduce((a,r)=>a+r.stk*r.ven,0);
+  const mp=rows.length?Math.round(rows.reduce((a,r)=>a+calcR(r).m,0)/rows.length):0;
+  const top5g=[...rows].sort((a,b)=>calcR(b).gt-calcR(a).gt).slice(0,5);
+  const top5m=[...rows].sort((a,b)=>calcR(b).m-calcR(a).m).slice(0,5);
+  const ag=rows.filter(r=>r.stk===0);
+  const bj=rows.filter(r=>r.stk>0&&r.stk<=r.min);
+  return <div style={{maxWidth:1200,margin:"0 auto",padding:"16px 12px 100px"}}>
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}}>
+      {[["💲 Total Invertido",money(ti),"#dc2626","#fff5f5"],["🏷️ Venta Potencial",money(tv),"#16a34a","#f0fdf4"],["💰 Ganancia Potencial",money(tg),"#7c3aed","#faf5ff"],["📈 Margen Promedio",mp+"%","#0284c7","#eff6ff"]].map(([l,v,c,bg])=>(
+        <div key={l} style={{background:bg,borderRadius:12,padding:14,textAlign:"center"}}>
+          <div style={{fontSize:11,color:"#64748b",marginBottom:4}}>{l}</div>
+          <div style={{fontSize:20,fontWeight:700,color:c}}>{v}</div>
         </div>
       ))}
-      {ag.length > 0 && (
-        <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", marginBottom: 12, overflow: "hidden" }}>
-          <div style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9", fontSize: 13, fontWeight: 700, color: "#dc2626" }}>⛔ Productos Agotados ({ag.length})</div>
-          <div style={{ padding: "0 16px" }}>{ag.map(r => <div key={r.id} style={{ padding: "8px 0", borderBottom: "1px solid #f1f5f9", fontSize: 13 }}>{r.nom} <span style={{ color: "#94a3b8" }}>{r.cod}</span></div>)}</div>
-        </div>
-      )}
-      {bj.length > 0 && (
-        <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", overflow: "hidden" }}>
-          <div style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9", fontSize: 13, fontWeight: 700, color: "#d97706" }}>⚠️ Stock Bajo — Reponer ({bj.length})</div>
-          <div style={{ padding: "0 16px" }}>{bj.map(r => <div key={r.id} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #f1f5f9", fontSize: 13 }}><span>{r.nom}</span><span style={{ color: "#d97706", fontWeight: 700 }}>{r.stk} uds</span></div>)}</div>
-        </div>
-      )}
     </div>
-  );
+    {[["🏆 Top 5 — Mayor Ganancia",top5g,r=>money(calcR(r).gt),"#7c3aed"],["📈 Top 5 — Mayor Margen",top5m,r=>calcR(r).m+"%","#16a34a"]].map(([title,list,val,col])=>(
+      <div key={title} style={{background:"#fff",borderRadius:12,border:"1px solid #e2e8f0",marginBottom:12,overflow:"hidden"}}>
+        <div style={{padding:"12px 16px",borderBottom:"1px solid #f1f5f9",fontSize:13,fontWeight:700}}>{title}</div>
+        <div style={{padding:"0 16px"}}>
+          {list.map((r,i)=><div key={r.id} style={{display:"flex",justifyContent:"space-between",padding:"10px 0",borderBottom:"1px solid #f1f5f9"}}>
+            <span style={{fontSize:13}}><span style={{color:"#94a3b8",marginRight:8}}>#{i+1}</span>{r.nom}</span>
+            <span style={{fontSize:13,fontWeight:700,color:col}}>{val(r)}</span>
+          </div>)}
+        </div>
+      </div>
+    ))}
+    {ag.length>0&&<div style={{background:"#fff",borderRadius:12,border:"1px solid #e2e8f0",marginBottom:12,overflow:"hidden"}}>
+      <div style={{padding:"12px 16px",borderBottom:"1px solid #f1f5f9",fontSize:13,fontWeight:700,color:"#dc2626"}}>⛔ Agotados ({ag.length})</div>
+      <div style={{padding:"0 16px"}}>{ag.map(r=><div key={r.id} style={{padding:"8px 0",borderBottom:"1px solid #f1f5f9",fontSize:13}}>{r.nom} <span style={{color:"#94a3b8"}}>{r.cod}</span></div>)}</div>
+    </div>}
+    {bj.length>0&&<div style={{background:"#fff",borderRadius:12,border:"1px solid #e2e8f0",overflow:"hidden"}}>
+      <div style={{padding:"12px 16px",borderBottom:"1px solid #f1f5f9",fontSize:13,fontWeight:700,color:"#d97706"}}>⚠️ Stock Bajo ({bj.length})</div>
+      <div style={{padding:"0 16px"}}>{bj.map(r=><div key={r.id} style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:"1px solid #f1f5f9",fontSize:13}}><span>{r.nom}</span><span style={{color:"#d97706",fontWeight:700}}>{r.stk} uds</span></div>)}</div>
+    </div>}
+  </div>;
 }
 
-function TabReglas() {
-  const tips = [
-    { i: "🔄", t: "¿Cuándo reponer?", d: "Cuando el stock llegue al mínimo configurado. Para bolsos de alta rotación mantén al menos 8-10 unidades.", c: "#0284c7", bg: "#eff6ff" },
-    { i: "🏷️", t: "¿Cuándo poner en oferta?", d: "Si un producto lleva más de 30 días sin venderse. Aplica 15-20% de descuento para recuperar la inversión.", c: "#d97706", bg: "#fffbeb" },
-    { i: "📦", t: "¿Cuántas unidades comprar?", d: "Para productos nuevos empieza con 5-6 unidades. Si rota bien, duplica el siguiente pedido.", c: "#16a34a", bg: "#f0fdf4" },
-    { i: "📈", t: "Margen mínimo recomendado", d: "Apunta a un margen de al menos 60% sobre el costo. Si es menor, revisa el precio de venta o busca otro proveedor.", c: "#7c3aed", bg: "#faf5ff" },
-    { i: "⭐", t: "Productos estrella", d: "Identifica tus 3 productos más vendidos y nunca dejes que se agoten. Son tu fuente principal de ingresos.", c: "#db2777", bg: "#fdf2f8" },
-    { i: "🗑️", t: "¿Cuándo descontinuar?", d: "Si un producto no se vende en 60 días, véndelo con 30-40% de descuento y no lo repongas. Reinvierte en lo que sí vende.", c: "#dc2626", bg: "#fff5f5" },
+function TabReglas(){
+  const tips=[
+    {i:"🔄",t:"¿Cuándo reponer?",d:"Cuando el stock llegue al mínimo configurado. Para bolsos de alta rotación mantén al menos 8-10 unidades.",c:"#0284c7",bg:"#eff6ff"},
+    {i:"🏷️",t:"¿Cuándo poner en oferta?",d:"Si un producto lleva más de 30 días sin venderse. Aplica 15-20% de descuento para recuperar la inversión.",c:"#d97706",bg:"#fffbeb"},
+    {i:"📦",t:"¿Cuántas unidades comprar?",d:"Para productos nuevos empieza con 5-6 unidades. Si rota bien, duplica el siguiente pedido.",c:"#16a34a",bg:"#f0fdf4"},
+    {i:"📈",t:"Margen mínimo recomendado",d:"Apunta a un margen de al menos 60% sobre el costo. Si es menor, revisa el precio de venta.",c:"#7c3aed",bg:"#faf5ff"},
+    {i:"⭐",t:"Productos estrella",d:"Identifica tus 3 productos más vendidos y nunca dejes que se agoten.",c:"#db2777",bg:"#fdf2f8"},
+    {i:"🗑️",t:"¿Cuándo descontinuar?",d:"Si un producto no se vende en 60 días, véndelo con 30-40% de descuento y no lo repongas.",c:"#dc2626",bg:"#fff5f5"},
   ];
-  const formulas = [
-    { f: "Ganancia por unidad", eq: "Precio Venta − Precio Costo", ej: "$45 − $18 = $27" },
-    { f: "Margen de ganancia", eq: "(Ganancia ÷ Costo) × 100", ej: "($27 ÷ $18) × 100 = 150%" },
-    { f: "Total invertido", eq: "Costo × Stock", ej: "$18 × 12 = $216" },
-    { f: "Ganancia potencial", eq: "Ganancia/u × Stock", ej: "$27 × 12 = $324" },
-    { f: "Precio sugerido", eq: "Costo × 2.5 (mínimo)", ej: "$18 × 2.5 = $45" },
+  const formulas=[
+    {f:"Ganancia por unidad",eq:"Precio Venta − Precio Costo",ej:"$45 − $18 = $27"},
+    {f:"Margen de ganancia",eq:"(Ganancia ÷ Costo) × 100",ej:"($27 ÷ $18) × 100 = 150%"},
+    {f:"Total invertido",eq:"Costo × Stock",ej:"$18 × 12 = $216"},
+    {f:"Ganancia potencial",eq:"Ganancia/u × Stock",ej:"$27 × 12 = $324"},
+    {f:"Precio sugerido",eq:"Costo × 2.5 (mínimo)",ej:"$18 × 2.5 = $45"},
   ];
-  return (
-    <div style={{ maxWidth: 1200, margin: "0 auto", padding: "16px 12px 100px" }}>
-      <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", marginBottom: 12, overflow: "hidden" }}>
-        <div style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9", fontSize: 13, fontWeight: 700 }}>📋 Reglas de Inventario</div>
-        <div style={{ padding: "12px 16px" }}>
-          {tips.map(t => (
-            <div key={t.t} style={{ background: t.bg, borderLeft: `4px solid ${t.c}`, borderRadius: 8, padding: "10px 12px", marginBottom: 10 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: t.c, marginBottom: 4 }}>{t.i} {t.t}</div>
-              <div style={{ fontSize: 12, color: "#475569", lineHeight: 1.6 }}>{t.d}</div>
-            </div>
-          ))}
-        </div>
+  return <div style={{maxWidth:1200,margin:"0 auto",padding:"16px 12px 100px"}}>
+    <div style={{background:"#fff",borderRadius:12,border:"1px solid #e2e8f0",marginBottom:12,overflow:"hidden"}}>
+      <div style={{padding:"12px 16px",borderBottom:"1px solid #f1f5f9",fontSize:13,fontWeight:700}}>📋 Reglas de Inventario</div>
+      <div style={{padding:"12px 16px"}}>
+        {tips.map(t=><div key={t.t} style={{background:t.bg,borderLeft:`4px solid ${t.c}`,borderRadius:8,padding:"10px 12px",marginBottom:10}}>
+          <div style={{fontSize:13,fontWeight:700,color:t.c,marginBottom:4}}>{t.i} {t.t}</div>
+          <div style={{fontSize:12,color:"#475569",lineHeight:1.6}}>{t.d}</div>
+        </div>)}
       </div>
-      <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", marginBottom: 12, overflow: "hidden" }}>
-        <div style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9", fontSize: 13, fontWeight: 700 }}>💡 Consejos para Evitar Pérdidas</div>
-        <div style={{ padding: "0 16px" }}>
-          {["Fotografía cada producto — los clientes compran más cuando ven la imagen real.", "Negocia con proveedores: pide descuento por volumen o pago a 30 días.", "No pongas más del 40% de tu inversión en una sola categoría.", "Registra cada venta para saber qué reponer.", "Revisa tus precios cada mes. Si el costo sube, ajusta el precio de venta.", "Guarda siempre el 20% de tus ganancias para reinvertir en stock."].map(c => (
-            <div key={c} style={{ display: "flex", gap: 8, padding: "8px 0", borderBottom: "1px solid #f1f5f9", fontSize: 13, color: "#475569" }}>
-              <span style={{ color: "#16a34a", flexShrink: 0 }}>✓</span><span>{c}</span>
-            </div>
-          ))}
-        </div>
+    </div>
+    <div style={{background:"#fff",borderRadius:12,border:"1px solid #e2e8f0",marginBottom:12,overflow:"hidden"}}>
+      <div style={{padding:"12px 16px",borderBottom:"1px solid #f1f5f9",fontSize:13,fontWeight:700}}>💡 Consejos para Evitar Pérdidas</div>
+      <div style={{padding:"0 16px"}}>
+        {["Fotografía cada producto — los clientes compran más cuando ven la imagen real.","Negocia con proveedores: pide descuento por volumen o pago a 30 días.","No pongas más del 40% de tu inversión en una sola categoría.","Registra cada venta para saber qué reponer.","Revisa tus precios cada mes. Si el costo sube, ajusta el precio de venta.","Guarda siempre el 20% de tus ganancias para reinvertir en stock."].map(c=>(
+          <div key={c} style={{display:"flex",gap:8,padding:"8px 0",borderBottom:"1px solid #f1f5f9",fontSize:13,color:"#475569"}}><span style={{color:"#16a34a",flexShrink:0}}>✓</span><span>{c}</span></div>
+        ))}
       </div>
-      <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e2e8f0", overflow: "hidden" }}>
-        <div style={{ padding: "12px 16px", borderBottom: "1px solid #f1f5f9", fontSize: 13, fontWeight: 700 }}>🧮 Fórmulas Clave</div>
-        <div style={{ padding: "0 16px" }}>
-          {formulas.map(r => (
-            <div key={r.f} style={{ padding: "10px 0", borderBottom: "1px solid #f1f5f9" }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#1e293b", marginBottom: 3 }}>{r.f}</div>
-              <div style={{ fontSize: 12, color: "#7c3aed", fontFamily: "monospace", marginBottom: 2 }}>{r.eq}</div>
-              <div style={{ fontSize: 11, color: "#94a3b8" }}>Ej: {r.ej}</div>
-            </div>
+    </div>
+    <div style={{background:"#fff",borderRadius:12,border:"1px solid #e2e8f0",overflow:"hidden"}}>
+      <div style={{padding:"12px 16px",borderBottom:"1px solid #f1f5f9",fontSize:13,fontWeight:700}}>🧮 Fórmulas Clave</div>
+      <div style={{padding:"0 16px"}}>
+        {formulas.map(r=><div key={r.f} style={{padding:"10px 0",borderBottom:"1px solid #f1f5f9"}}>
+          <div style={{fontSize:12,fontWeight:700,color:"#1e293b",marginBottom:3}}>{r.f}</div>
+          <div style={{fontSize:12,color:"#7c3aed",fontFamily:"monospace",marginBottom:2}}>{r.eq}</div>
+          <div style={{fontSize:11,color:"#94a3b8"}}>Ej: {r.ej}</div>
+        </div>)}
+      </div>
+    </div>
+  </div>;
+}
+
+function App(){
+  const savedRows=()=>{try{return JSON.parse(localStorage.getItem("inv_pro2"))||DEMO;}catch(e){return DEMO;}};
+  const [rows,setRowsRaw]=useState(savedRows);
+  const [tab,setTab]=useState("inv");
+
+  function setRows(fn){
+    setRowsRaw(prev=>{const next=typeof fn==="function"?fn(prev):fn;localStorage.setItem("inv_pro2",JSON.stringify(next));return next;});
+  }
+
+  const stats=useMemo(()=>({
+    ts:rows.reduce((a,r)=>a+r.stk,0),
+    ti:rows.reduce((a,r)=>a+calcR(r).inv,0),
+    tg:rows.reduce((a,r)=>a+calcR(r).gt,0),
+    al:rows.filter(r=>r.stk<=r.min).length,
+    mp:rows.length?Math.round(rows.reduce((a,r)=>a+calcR(r).m,0)/rows.length):0,
+  }),[rows]);
+
+  return <div style={{minHeight:"100vh",background:"#f1f5f9",fontFamily:"'Segoe UI',sans-serif"}}>
+    {/* Header */}
+    <div style={{background:"linear-gradient(135deg,#1e40af,#1d4ed8)",padding:"16px 20px",position:"sticky",top:0,zIndex:50,boxShadow:"0 2px 12px rgba(0,0,0,0.2)"}}>
+      <div style={{maxWidth:1200,margin:"0 auto"}}>
+        <div style={{fontSize:17,fontWeight:700,color:"#fff",marginBottom:12}}>👜 Inventario Profesional</div>
+        <div className="stats-grid" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:12}}>
+          <StatBox val={rows.length} label="Productos" color="#38bdf8"/>
+          <StatBox val={stats.ts} label="Unidades" color="#86efac"/>
+          <StatBox val={money(stats.ti)} label="Inversión" color="#fde68a"/>
+          <StatBox val={money(stats.tg)} label="Ganancia" color="#6ee7b7"/>
+          <StatBox val={stats.mp+"%"} label="Margen" color="#c4b5fd"/>
+          <StatBox val={stats.al} label="Alertas" color={stats.al>0?"#fca5a5":"#86efac"}/>
+        </div>
+        <div style={{display:"flex",gap:3,background:"rgba(255,255,255,0.1)",borderRadius:10,padding:3}}>
+          {[["inv","📦 Inventario"],["rep","📊 Reportes"],["reg","📋 Reglas"]].map(([t,l])=>(
+            <button key={t} onClick={()=>setTab(t)} style={{flex:1,padding:8,background:tab===t?"#fff":"transparent",border:"none",borderRadius:8,fontSize:12,fontWeight:700,color:tab===t?"#1d4ed8":"rgba(255,255,255,0.65)",cursor:"pointer"}}>{l}</button>
           ))}
         </div>
       </div>
     </div>
-  );
+    {tab==="inv"&&<TabInventario rows={rows} setRows={setRows}/>}
+    {tab==="rep"&&<TabReportes rows={rows}/>}
+    {tab==="reg"&&<TabReglas/>}
+  </div>;
 }
 
-export default function App() {
-  const [rows, setRows] = useState(DEMO);
-  const [tab, setTab] = useState("inv");
-
-  const stats = useMemo(() => ({
-    ts: rows.reduce((a, r) => a + r.stk, 0),
-    ti: rows.reduce((a, r) => a + calcR(r).inv, 0),
-    tg: rows.reduce((a, r) => a + calcR(r).gt, 0),
-    al: rows.filter(r => r.stk <= r.min).length,
-    mp: rows.length ? Math.round(rows.reduce((a, r) => a + calcR(r).m, 0) / rows.length) : 0,
-  }), [rows]);
-
-  return (
-    <div style={{ minHeight: "100vh", background: "#f1f5f9", fontFamily: "'Segoe UI', sans-serif" }}>
-      <style>{`* { box-sizing: border-box; } button:active { opacity: 0.8; } input:focus, select:focus { outline: 2px solid #3b82f6; }`}</style>
-
-      {/* HEADER */}
-      <div style={{ background: "linear-gradient(135deg,#1e40af,#1d4ed8)", padding: "16px 20px", position: "sticky", top: 0, zIndex: 50, boxShadow: "0 2px 12px rgba(0,0,0,0.2)" }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <div style={{ fontSize: 17, fontWeight: 700, color: "#fff", marginBottom: 12 }}>👜 Inventario Profesional</div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8, marginBottom: 12 }}>
-            <StatBox val={rows.length} label="Productos" color="#38bdf8" />
-            <StatBox val={stats.ts} label="Unidades" color="#86efac" />
-            <StatBox val={money(stats.ti)} label="Inversión" color="#fde68a" />
-            <StatBox val={money(stats.tg)} label="Ganancia" color="#6ee7b7" />
-            <StatBox val={stats.mp + "%"} label="Margen" color="#c4b5fd" />
-            <StatBox val={stats.al} label="Alertas" color={stats.al > 0 ? "#fca5a5" : "#86efac"} />
-          </div>
-          <div style={{ display: "flex", gap: 3, background: "rgba(255,255,255,0.1)", borderRadius: 10, padding: 3 }}>
-            {[["inv", "📦 Inventario"], ["rep", "📊 Reportes"], ["reg", "📋 Reglas"]].map(([t, l]) => (
-              <button key={t} onClick={() => setTab(t)} style={{ flex: 1, padding: 8, background: tab === t ? "#fff" : "transparent", border: "none", borderRadius: 8, fontSize: 12, fontWeight: 700, color: tab === t ? "#1d4ed8" : "rgba(255,255,255,0.65)", cursor: "pointer" }}>{l}</button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {tab === "inv" && <TabInventario rows={rows} setRows={setRows} />}
-      {tab === "rep" && <TabReportes rows={rows} />}
-      {tab === "reg" && <TabReglas />}
-    </div>
-  );
-}
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
