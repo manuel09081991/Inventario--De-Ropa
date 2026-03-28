@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Inventario Profesional</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Segoe UI',sans-serif;background:#f1f5f9;color:#1e293b;}
+    button{cursor:pointer;font-family:'Segoe UI',sans-serif;transition:all 0.15s;}
+    button:active{transform:scale(0.97);}
+    input,select,textarea{font-family:'Segoe UI',sans-serif;box-sizing:border-box;}
+    input:focus,select:focus,textarea:focus{border-color:#3b82f6!important;box-shadow:0 0 0 3px #bfdbfe;outline:none;}
+    a{color:#0284c7;text-decoration:none;}
+
+    .header{background:linear-gradient(135deg,#1e40af,#1d4ed8);padding:16px 20px;position:sticky;top:0;z-index:50;box-shadow:0 2px 12px rgba(30,64,175,0.4);}
+    .header-inner{max-width:1300px;margin:0 auto;}
+    .stats-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;}
+    .stat-box{background:rgba(255,255,255,0.15);border-radius:8px;padding:8px 10px;text-align:center;}
+    .stat-val{font-size:16px;font-weight:700;}
+    .stat-lbl{font-size:10px;color:rgba(255,255,255,0.7);margin-top:1px;}
+
+    .tabs{display:flex;gap:3px;margin-top:12px;background:rgba(255,255,255,0.1);border-radius:10px;padding:3px;}
+    .tab{flex:1;padding:8px;background:transparent;border:none;border-radius:8px;font-size:12px;font-weight:700;color:rgba(255,255,255,0.65);cursor:pointer;}
+    .tab.active{background:#fff;color:#1d4ed8;}
+
+    .main{max-width:1300px;margin:0 auto;padding:16px 16px 100px;}
+
+    .card{background:#fff;border-radius:12px;border:1px solid #e2e8f0;margin-bottom:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.06);}
+    .card-header{padding:12px 16px;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;}
+    .card-body{padding:14px 16px;}
+
+    .badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;}
+    .inp{width:100%;padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;color:#1e293b;background:#f8fafc;}
+    .lbl{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;display:block;}
+    .field{margin-bottom:10px;}
+    .btn{padding:9px 16px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;}
+    .btn-primary{background:#1d4ed8;color:#fff;}
+    .btn-success{background:#16a34a;color:#fff;}
+    .btn-danger{background:#fee2e2;color:#dc2626;}
+    .btn-edit{background:#dbeafe;color:#1d4ed8;}
+
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;display:flex;align-items:flex-end;justify-content:center;}
+    .modal-box{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:580px;padding:22px 18px 36px;max-height:93vh;overflow-y:auto;}
+    .fab{position:fixed;bottom:24px;right:24px;background:#1d4ed8;border:none;color:#fff;border-radius:50%;width:58px;height:58px;font-size:28px;box-shadow:0 4px 16px rgba(29,78,216,0.5);z-index:40;display:flex;align-items:center;justify-content:center;}
+
+    .filter-bar{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;}
+    .filter-bar::-webkit-scrollbar{display:none;}
+    .filter-btn{flex-shrink:0;padding:6px 13px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid #e2e8f0;background:#fff;color:#64748b;cursor:pointer;}
+    .filter-btn.active{color:#fff;}
+
+    .product-grid{display:grid;grid-template-columns:1fr;gap:12px;}
+    .tip-card{border-left:4px solid;border-radius:8px;padding:10px 12px;margin-bottom:8px;}
+
+    /* ALERT LEVELS */
+    .alert-red{background:#fff5f5;border-color:#fecaca;}
+    .alert-yellow{background:#fffbeb;border-color:#fde68a;}
+    .alert-green{background:#f0fdf4;border-color:#bbf7d0;}
+
+    @media(min-width:640px){
+      .stats-bar{grid-template-columns:repeat(4,1fr);}
+      .modal-overlay{align-items:center;padding:16px;}
+      .modal-box{border-radius:16px;max-height:90vh;}
+    }
+    @media(min-width:900px){
+      .main{padding:20px 24px 100px;}
+      .product-grid{grid-template-columns:1fr 1fr;}
+      .stats-bar{grid-template-columns:repeat(6,1fr);}
+    }
+    @media(min-width:1200px){
+      .product-grid{grid-template-columns:1fr 1fr 1fr;}
+      .layout-split{display:grid;grid-template-columns:300px 1fr;gap:20px;align-items:start;}
+      .sidebar{position:sticky;top:90px;}
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-inner">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div style="font-size:17px;font-weight:700;color:#fff;">👜 Inventario Profesional</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.65);margin-top:1px;">Sistema de control de bolsos y accesorios</div>
+      </div>
+    </div>
+    <div class="stats-bar" id="stats-bar"></div>
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('inventario',this)">📦 Inventario</button>
+      <button class="tab" onclick="switchTab('reportes',this)">📊 Reportes</button>
+      <button class="tab" onclick="switchTab('reglas',this)">📋 Reglas</button>
+    </div>
+  </div>
+</div>
+
+<!-- INVENTARIO TAB -->
+<div id="tab-inventario" class="main">
+  <div class="layout-split">
+    <div class="sidebar">
+      <!-- Resumen categorías -->
+      <div class="card" style="margin-bottom:12px;">
+        <div class="card-header">
+          <span style="font-size:13px;font-weight:700;">📊 Por Categoría</span>
+          <button onclick="togglePanel('cat-panel')" style="background:none;border:none;font-size:12px;color:#64748b;">▼</button>
+        </div>
+        <div id="cat-panel" class="card-body" style="padding:10px 12px;" ></div>
+      </div>
+      <!-- Alertas -->
+      <div class="card">
+        <div class="card-header"><span style="font-size:13px;font-weight:700;">🚨 Alertas</span></div>
+        <div id="alertas-panel" class="card-body" style="padding:10px 12px;"></div>
+      </div>
+    </div>
+    <div>
+      <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+        <div class="filter-bar" id="filtros" style="flex:1;"></div>
+        <input id="search" class="inp" type="text" placeholder="🔍 Buscar..." style="max-width:180px;" oninput="render()"/>
+      </div>
+      <div class="product-grid" id="lista"></div>
+    </div>
+  </div>
+</div>
+
+<!-- REPORTES TAB -->
+<div id="tab-reportes" class="main" style="display:none;">
+  <div id="reportes-content"></div>
+</div>
+
+<!-- REGLAS TAB -->
+<div id="tab-reglas" class="main" style="display:none;">
+  <div id="reglas-content"></div>
+</div>
+
+<!-- FAB -->
+<button class="fab" id="fab-btn" onclick="openModal('add')">+</button>
+
+<!-- MODAL -->
+<div id="modal" class="modal-overlay" style="display:none;" onclick="handleOverlay(event)">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+      <div id="modal-title" style="font-size:16px;font-weight:700;">Producto</div>
+      <button onclick="closeModal()" style="background:#f1f5f9;border:none;border-radius:20px;padding:4px 13px;font-size:13px;color:#64748b;">✕</button>
+    </div>
+
+    <!-- Foto -->
+    <div class="field">
+      <span class="lbl">📸 Foto del producto</span>
+      <div id="foto-preview" style="display:none;margin-bottom:8px;position:relative;">
+        <img id="foto-img" src="" style="width:100%;max-height:180px;object-fit:cover;border-radius:10px;border:1px solid #e2e8f0;"/>
+        <button onclick="removePhoto()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.5);border:none;color:#fff;border-radius:50%;width:28px;height:28px;font-size:13px;">✕</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <label style="display:flex;align-items:center;justify-content:center;gap:6px;padding:9px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:#1d4ed8;">
+          📷 Cámara<input type="file" accept="image/*" capture="environment" onchange="handlePhoto(event)" style="display:none;"/>
+        </label>
+        <label style="display:flex;align-items:center;justify-content:center;gap:6px;padding:9px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:#16a34a;">
+          🖼️ Galería<input type="file" accept="image/*" onchange="handlePhoto(event)" style="display:none;"/>
+        </label>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="field"><span class="lbl">Código</span><input id="f-codigo" class="inp" type="text" placeholder="BOL-001"/></div>
+      <div class="field"><span class="lbl">Categoría</span>
+        <select id="f-cat" class="inp">
+          <option>Bolsos Pequeños</option><option>Bolsos Medianos</option><option>Bolsos Grandes</option>
+          <option>Carteras</option><option>Monederos y Billeteras</option>
+          <option>Accesorios de Moda</option><option>Accesorios para Celular</option>
+          <option>Camisetas</option><option>Pantalones</option><option>Chaquetas</option>
+          <option>Vestidos</option><option>Zapatos</option><option>Ropa Interior</option>
+        </select>
+      </div>
+    </div>
+    <div class="field"><span class="lbl">Nombre del producto</span><input id="f-nombre" class="inp" type="text" placeholder="Ej: Bolso Tote Cuero Negro"/></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="field"><span class="lbl">Color / Modelo</span><input id="f-color" class="inp" type="text" placeholder="Negro"/></div>
+      <div class="field"><span class="lbl">Nivel</span>
+        <select id="f-nivel" class="inp">
+          <option value="basico">Básico</option>
+          <option value="tendencia">Tendencia</option>
+          <option value="economico">Económico</option>
+          <option value="premium">Premium</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Precios -->
+    <div style="background:#f8fafc;border-radius:10px;padding:12px;margin-bottom:12px;">
+      <span class="lbl" style="margin-bottom:10px;">💰 Precios y Stock</span>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
+        <div>
+          <span class="lbl" style="color:#dc2626;">💲 Costo</span>
+          <input id="f-costo" class="inp" type="number" step="0.01" min="0" value="0" oninput="updateCalcs()" style="border-color:#fecaca;text-align:center;"/>
+        </div>
+        <div>
+          <span class="lbl" style="color:#16a34a;">🏷️ Venta</span>
+          <input id="f-venta" class="inp" type="number" step="0.01" min="0" value="0" oninput="updateCalcs()" style="border-color:#bbf7d0;text-align:center;"/>
+        </div>
+        <div>
+          <span class="lbl">📦 Stock</span>
+          <input id="f-stock" class="inp" type="number" min="0" value="0" oninput="updateCalcs()" style="text-align:center;"/>
+        </div>
+      </div>
+      <div>
+        <span class="lbl">⚠️ Alerta stock mínimo</span>
+        <input id="f-minstock" class="inp" type="number" min="0" value="5" style="text-align:center;"/>
+        <div style="font-size:11px;color:#94a3b8;margin-top:3px;">La app te avisará cuando bajes de este número</div>
+      </div>
+    </div>
+
+    <!-- Cálculos en tiempo real -->
+    <div id="modal-calcs" style="background:#eff6ff;border-radius:10px;padding:12px;margin-bottom:12px;"></div>
+
+    <!-- Proveedor -->
+    <div style="background:#f0fdf4;border-radius:10px;padding:12px;margin-bottom:12px;border:1px solid #bbf7d0;">
+      <span class="lbl" style="color:#16a34a;margin-bottom:10px;">👤 Proveedor</span>
+      <div class="field"><span class="lbl">Nombre</span><input id="f-prov" class="inp" type="text" placeholder="Textiles García"/></div>
+      <div class="field"><span class="lbl">Dirección</span><input id="f-dir" class="inp" type="text" placeholder="Calle, Ciudad, País"/></div>
+      <div class="field"><span class="lbl">Google Maps</span><input id="f-maps" class="inp" type="url" placeholder="https://maps.google.com/..."/></div>
+      <div class="field" style="margin-bottom:0;"><span class="lbl">Notas</span><input id="f-notas" class="inp" type="text" placeholder="Condiciones, descuentos..."/></div>
+    </div>
+
+    <button onclick="saveModal()" class="btn btn-primary" style="width:100%;padding:13px;font-size:15px;">✓ Guardar Producto</button>
+  </div>
+</div>
+
+<script>
+const NIVELES={basico:{label:"Básico",color:"#0284c7"},tendencia:{label:"Tendencia",color:"#db2777"},economico:{label:"Económico",color:"#16a34a"},premium:{label:"Premium",color:"#7c3aed"}};
+const CAT_COLORS={"Bolsos Pequeños":"#0284c7","Bolsos Medianos":"#0891b2","Bolsos Grandes":"#166534","Carteras":"#b45309","Monederos y Billeteras":"#92400e","Accesorios de Moda":"#9333ea","Accesorios para Celular":"#0e7490","Camisetas":"#1d4ed8","Pantalones":"#16a34a","Chaquetas":"#d97706","Vestidos":"#db2777","Zapatos":"#7c3aed","Zapatos":"#7c3aed","Ropa Interior":"#ca8a04"};
+const CAT_ICONS={"Bolsos Pequeños":"👜","Bolsos Medianos":"👝","Bolsos Grandes":"🛍️","Carteras":"💼","Monederos y Billeteras":"👛","Accesorios de Moda":"⌚","Accesorios para Celular":"📱","Camisetas":"👕","Pantalones":"👖","Chaquetas":"🧥","Vestidos":"👗","Zapatos":"👟","Ropa Interior":"🩲"};
+
+const DEMO=[
+  {id:1,codigo:"BOL-001",categoria:"Bolsos Pequeños",nombre:"Mini Bolso Acolchado",color:"Rosa",nivel:"tendencia",costo:18,venta:45,stock:12,minstock:5,foto:"",prov:"Distribuidora Moda",dir:"Calle 45 #12-30, Medellín",maps:"",notas:"Pago contraentrega"},
+  {id:2,codigo:"BOL-002",categoria:"Bolsos Medianos",nombre:"Tote Bag Canvas",color:"Beige",nivel:"basico",costo:22,venta:50,stock:8,minstock:5,foto:"",prov:"Textiles García",dir:"Av. Principal 100, Bogotá",maps:"",notas:"10% descuento x10+"},
+  {id:3,codigo:"BOL-003",categoria:"Bolsos Grandes",nombre:"Bolso Shopper Cuero PU",color:"Negro",nivel:"premium",costo:45,venta:110,stock:4,minstock:5,foto:"",prov:"Importaciones Elite",dir:"Zona Franca, Barranquilla",maps:"",notas:"Mín. 3 unidades"},
+  {id:4,codigo:"CAR-001",categoria:"Carteras",nombre:"Cartera Crossbody Cadena",color:"Dorado",nivel:"tendencia",costo:30,venta:75,stock:6,minstock:4,foto:"",prov:"Distribuidora Moda",dir:"Calle 45 #12-30, Medellín",maps:"",notas:""},
+  {id:5,codigo:"MON-001",categoria:"Monederos y Billeteras",nombre:"Monedero Tejido Crochet",color:"Multicolor",nivel:"economico",costo:8,venta:20,stock:20,minstock:8,foto:"",prov:"Artesanías del Norte",dir:"Mercado Central, Cartagena",maps:"",notas:"Hecho a mano"},
+  {id:6,codigo:"BOL-004",categoria:"Bolsos Pequeños",nombre:"Bolso Baguette Satín",color:"Vino",nivel:"tendencia",costo:25,venta:60,stock:3,minstock:5,foto:"",prov:"Distribuidora Moda",dir:"",maps:"",notas:""},
+  {id:7,codigo:"CAR-002",categoria:"Carteras",nombre:"Cartera Clutch Noche",color:"Plata",nivel:"premium",costo:35,venta:90,stock:5,minstock:3,foto:"",prov:"Importaciones Elite",dir:"",maps:"",notas:"Edición limitada"},
+  {id:8,codigo:"BOL-005",categoria:"Bolsos Medianos",nombre:"Bolso Bucket Ante",color:"Camel",nivel:"basico",costo:28,venta:65,stock:7,minstock:5,foto:"",prov:"Textiles García",dir:"",maps:"",notas:""},
+  {id:9,codigo:"ACC-001",categoria:"Accesorios de Moda",nombre:"Reloj Mujer Minimalista",color:"Blanco/Oro",nivel:"premium",costo:40,venta:95,stock:6,minstock:3,foto:"",prov:"Relojes Importados SA",dir:"",maps:"",notas:""},
+  {id:10,codigo:"CEL-001",categoria:"Accesorios para Celular",nombre:"Forro iPhone 15 Pro",color:"Transparente",nivel:"economico",costo:5,venta:18,stock:25,minstock:10,foto:"",prov:"TechAccess",dir:"",maps:"",notas:"Compatible varios modelos"},
+  {id:11,codigo:"BOL-006",categoria:"Bolsos Grandes",nombre:"Bolso Weekender Lona",color:"Azul Marino",nivel:"basico",costo:38,venta:85,stock:2,minstock:4,foto:"",prov:"Textiles García",dir:"",maps:"",notas:""},
+  {id:12,codigo:"MON-002",categoria:"Monederos y Billeteras",nombre:"Billetera Cuero Genuino",color:"Café",nivel:"premium",costo:20,venta:55,stock:10,minstock:5,foto:"",prov:"Curtiembres El Valle",dir:"",maps:"",notas:"Grabado disponible"},
+];
+
+let rows=JSON.parse(localStorage.getItem('inv_pro')||'null')||DEMO;
+let nid=rows.length?Math.max(...rows.map(r=>r.id))+1:13;
+let filtro="Todas";
+let editingId=null;
+let currentPhoto="";
+let currentTab="inventario";
+
+function save(){localStorage.setItem('inv_pro',JSON.stringify(rows));}
+function money(n){return"$"+Number(Math.abs(n)).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,",");}
+function pct(g,c){return c>0?Math.round((g/c)*100):0;}
+
+function calcRow(r){
+  const gan=r.venta-r.costo;
+  const inv=r.stock*r.costo;
+  const ganTotal=r.stock*gan;
+  const margen=pct(gan,r.costo);
+  return{gan,inv,ganTotal,margen};
+}
+
+function switchTab(tab,btn){
+  currentTab=tab;
+  ["inventario","reportes","reglas"].forEach(t=>{
+    document.getElementById("tab-"+t).style.display=t===tab?"block":"none";
+  });
+  document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  document.getElementById("fab-btn").style.display=tab==="inventario"?"flex":"none";
+  if(tab==="reportes")renderReportes();
+  if(tab==="reglas")renderReglas();
+}
+
+function renderStats(){
+  const totInv=rows.reduce((s,r)=>s+calcRow(r).inv,0);
+  const totGan=rows.reduce((s,r)=>s+calcRow(r).ganTotal,0);
+  const totStock=rows.reduce((s,r)=>s+r.stock,0);
+  const alertas=rows.filter(r=>r.stock<=r.minstock).length;
+  const margenProm=rows.length?Math.round(rows.reduce((s,r)=>s+calcRow(r).margen,0)/rows.length):0;
+  document.getElementById("stats-bar").innerHTML=`
+    <div class="stat-box"><div class="stat-val" style="color:#38bdf8;">${rows.length}</div><div class="stat-lbl">Productos</div></div>
+    <div class="stat-box"><div class="stat-val" style="color:#86efac;">${totStock}</div><div class="stat-lbl">Unidades</div></div>
+    <div class="stat-box"><div class="stat-val" style="color:#fde68a;">${money(totInv)}</div><div class="stat-lbl">Inversión</div></div>
+    <div class="stat-box"><div class="stat-val" style="color:#6ee7b7;">${money(totGan)}</div><div class="stat-lbl">Gan. Potencial</div></div>
+    <div class="stat-box"><div class="stat-val" style="color:#c4b5fd;">${margenProm}%</div><div class="stat-lbl">Margen Prom.</div></div>
+    <div class="stat-box"><div class="stat-val" style="color:${alertas>0?'#fca5a5':'#86efac'};">${alertas}</div><div class="stat-lbl">Alertas Stock</div></div>`;
+}
+
+function renderSidebar(){
+  const byCat={};
+  rows.forEach(r=>{
+    if(!byCat[r.categoria])byCat[r.categoria]={count:0,inv:0,ganTotal:0};
+    const c=calcRow(r);byCat[r.categoria].count++;byCat[r.categoria].inv+=c.inv;byCat[r.categoria].ganTotal+=c.ganTotal;
+  });
+  const totInv=rows.reduce((s,r)=>s+calcRow(r).inv,0);
+  const panel=document.getElementById("cat-panel");
+  panel.innerHTML="";
+
+  Object.entries(byCat).sort((a,b)=>b[1].ganTotal-a[1].ganTotal).forEach(([cat,t])=>{
+    const col=CAT_COLORS[cat]||"#64748b";
+    const ic=CAT_ICONS[cat]||"\u{1F4E6}";
+    const p=totInv>0?Math.round(t.inv/totInv*100):0;
+    const active=filtro===cat;
+    const div=document.createElement("div");
+    div.style.cssText="margin-bottom:8px;padding:8px 10px;background:"+(active?col+"15":"#f8fafc")+";border:1px solid "+(active?col:"#e2e8f0")+";border-left:3px solid "+col+";border-radius:8px;cursor:pointer;";
+    div.innerHTML="<div style=\"display:flex;justify-content:space-between;\"><span style=\"font-size:12px;font-weight:700;color:"+col+";\">"+(CAT_ICONS[cat]||"")+" "+cat+"</span><span style=\"font-size:12px;font-weight:700;color:#7c3aed;\">+"+money(t.ganTotal)+"</span></div><div style=\"display:flex;justify-content:space-between;margin:3px 0;\"><span style=\"font-size:11px;color:#64748b;\">"+t.count+" prod.</span><span style=\"font-size:11px;color:#64748b;\">Inv: "+money(t.inv)+"</span></div><div style=\"height:4px;background:#e2e8f0;border-radius:2px;\"><div style=\"height:100%;width:"+p+"%;background:"+col+";border-radius:2px;\"></div></div>";
+    div.addEventListener("click", function(){ setFiltro(cat); });
+    panel.appendChild(div);
+  });
+
+  // Total general
+  const totDiv=document.createElement("div");
+  const totGan=rows.reduce((s,r)=>s+calcRow(r).ganTotal,0);
+  totDiv.style.cssText="padding:8px 10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;display:flex;justify-content:space-between;align-items:center;margin-top:4px;cursor:pointer;";
+  totDiv.innerHTML="<span style=\"font-size:11px;font-weight:700;color:#1d4ed8;\">\uD83C\uDFC1 Total General</span><span style=\"font-size:12px;font-weight:700;color:#7c3aed;\">+"+money(totGan)+"</span>";
+  totDiv.addEventListener("click", function(){ setFiltro("Todas"); });
+  panel.appendChild(totDiv);
+
+  // Alertas
+  const bajos=rows.filter(r=>r.stock<=r.minstock);
+  const aPanel=document.getElementById("alertas-panel");
+  aPanel.innerHTML="";
+  if(bajos.length===0){
+    aPanel.innerHTML="<div style=\"text-align:center;padding:10px;color:#16a34a;font-size:13px;\">\u2705 Todo en orden</div>";
+  } else {
+    bajos.forEach(r=>{
+      const level=r.stock===0?"red":r.stock<=Math.floor(r.minstock/2)?"red":"yellow";
+      const d=document.createElement("div");
+      d.className="tip-card alert-"+level;
+      d.style.marginBottom="6px";
+      d.innerHTML="<div style=\"font-size:12px;font-weight:700;color:"+(level==="red"?"#dc2626":"#d97706")+";\">"+ r.nombre+"</div><div style=\"font-size:11px;color:#64748b;\">Stock: <b>"+r.stock+"</b> / M\u00edn: "+r.minstock+" \u2014 "+(r.stock===0?"\u26D4 Sin stock":"\u26A0\uFE0F Reponer pronto")+"</div>";
+      aPanel.appendChild(d);
+    });
+  }
+}
+
+function renderFiltros(){
+  const cats=["Todas",...new Set(rows.map(r=>r.categoria))];
+  const bar=document.getElementById("filtros");
+  bar.innerHTML="";
+  cats.forEach(function(c){
+    const col=CAT_COLORS[c]||"#3b82f6";
+    const active=filtro===c;
+    const btn=document.createElement("button");
+    btn.className="filter-btn"+(active?" active":"");
+    btn.textContent=(CAT_ICONS[c]||"")+" "+c;
+    if(active){ btn.style.background=col; btn.style.borderColor=col; btn.style.color="#fff"; }
+    btn.addEventListener("click", function(){ setFiltro(c); });
+    bar.appendChild(btn);
+  });
+}
+
+function render(){
+  renderStats();
+  renderSidebar();
+  renderFiltros();
+  const search=(document.getElementById("search")||{}).value||"";
+  let visible=filtro==="Todas"?rows:rows.filter(r=>r.categoria===filtro);
+  if(search)visible=visible.filter(r=>r.nombre.toLowerCase().includes(search.toLowerCase())||r.codigo.toLowerCase().includes(search.toLowerCase())||r.color.toLowerCase().includes(search.toLowerCase()));
+
+  if(visible.length===0){
+    document.getElementById("lista").innerHTML=`<div style="text-align:center;padding:40px 20px;color:#94a3b8;grid-column:1/-1;">No hay productos.</div>`;
+    return;
+  }
+
+  document.getElementById("lista").innerHTML=visible.map(row=>{
+    const{gan,inv,ganTotal,margen}=calcRow(row);
+    const col=CAT_COLORS[row.categoria]||"#64748b";
+    const ic=CAT_ICONS[row.categoria]||"📦";
+    const niv=NIVELES[row.nivel]||NIVELES.basico;
+    const stockAlert=row.stock===0?"red":row.stock<=row.minstock?"yellow":"green";
+    const stockColor=stockAlert==="red"?"#dc2626":stockAlert==="yellow"?"#d97706":"#16a34a";
+    return`<div class="card">
+      ${row.foto?`<img src="${row.foto}" style="width:100%;height:160px;object-fit:cover;"/>`:""}
+      <div style="border-left:4px solid ${col};padding:12px 14px 10px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+          <div style="flex:1;margin-right:8px;">
+            <div style="font-size:11px;color:#94a3b8;margin-bottom:2px;">${row.codigo}</div>
+            <div style="font-size:14px;font-weight:700;color:#1e293b;margin-bottom:5px;">${row.nombre}</div>
+            <div style="display:flex;gap:5px;flex-wrap:wrap;">
+              <span class="badge" style="background:${col}15;color:${col};border:1px solid ${col}30;">${ic} ${row.categoria}</span>
+              <span class="badge" style="background:${niv.color}15;color:${niv.color};border:1px solid ${niv.color}30;">${niv.label}</span>
+              ${row.color?`<span class="badge" style="background:#f1f5f9;color:#64748b;">${row.color}</span>`:""}
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:11px;color:#94a3b8;">Stock</div>
+            <div style="font-size:22px;font-weight:700;color:${stockColor};">${row.stock}</div>
+            ${row.stock===0?`<div style="font-size:10px;color:#dc2626;font-weight:700;">⛔ AGOTADO</div>`:row.stock<=row.minstock?`<div style="font-size:10px;color:#d97706;font-weight:700;">⚠️ Bajo</div>`:""}
+          </div>
+        </div>
+
+        <!-- Precios -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:8px;background:#f8fafc;border-radius:8px;padding:8px;">
+          <div style="text-align:center;">
+            <div style="font-size:10px;color:#dc2626;margin-bottom:1px;">💲 Costo</div>
+            <div style="font-size:13px;font-weight:700;color:#dc2626;">${money(row.costo)}</div>
+          </div>
+          <div style="text-align:center;border-left:1px solid #e2e8f0;">
+            <div style="font-size:10px;color:#16a34a;margin-bottom:1px;">🏷️ Venta</div>
+            <div style="font-size:13px;font-weight:700;color:#16a34a;">${money(row.venta)}</div>
+          </div>
+          <div style="text-align:center;border-left:1px solid #e2e8f0;">
+            <div style="font-size:10px;color:#7c3aed;margin-bottom:1px;">💰 Gan/u</div>
+            <div style="font-size:13px;font-weight:700;color:#7c3aed;">${money(gan)}</div>
+          </div>
+          <div style="text-align:center;border-left:1px solid #e2e8f0;">
+            <div style="font-size:10px;color:#7c3aed;margin-bottom:1px;">📈 Margen</div>
+            <div style="font-size:13px;font-weight:700;color:#7c3aed;">${margen}%</div>
+          </div>
+        </div>
+
+        <!-- Totales -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;">
+          <div style="background:#fff5f5;border-radius:7px;padding:7px 8px;text-align:center;">
+            <div style="font-size:10px;color:#fca5a5;">Total Invertido</div>
+            <div style="font-size:13px;font-weight:700;color:#dc2626;">${money(inv)}</div>
+          </div>
+          <div style="background:#f0fdf4;border-radius:7px;padding:7px 8px;text-align:center;">
+            <div style="font-size:10px;color:#86efac;">Gan. Potencial</div>
+            <div style="font-size:13px;font-weight:700;color:#16a34a;">+${money(ganTotal)}</div>
+          </div>
+        </div>
+
+        <!-- Proveedor -->
+        ${row.prov?`<div style="background:#f0fdf4;border-radius:8px;padding:7px 10px;margin-bottom:10px;font-size:12px;color:#475569;">
+          <div style="font-weight:700;color:#16a34a;margin-bottom:3px;">👤 ${row.prov}</div>
+          ${row.dir?`<div>📍 ${row.dir}</div>`:""}
+          ${row.maps?`<a href="${row.maps}" target="_blank" style="color:#0284c7;font-weight:600;">🗺️ Ver en Maps</a>`:""}
+          ${row.notas?`<div style="color:#94a3b8;margin-top:2px;">📝 ${row.notas}</div>`:""}
+        </div>`:""}
+
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-edit" onclick="openModal('edit',${row.id})" style="flex:1;padding:8px;">✏️ Editar</button>
+          <button class="btn btn-danger" onclick="deleteRow(${row.id})" style="flex:1;padding:8px;">🗑 Eliminar</button>
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function renderReportes(){
+  const totInv=rows.reduce((s,r)=>s+calcRow(r).inv,0);
+  const totGan=rows.reduce((s,r)=>s+calcRow(r).ganTotal,0);
+  const totVenta=rows.reduce((s,r)=>s+r.stock*r.venta,0);
+  const margenProm=rows.length?Math.round(rows.reduce((s,r)=>s+calcRow(r).margen,0)/rows.length):0;
+  const topGan=[...rows].sort((a,b)=>calcRow(b).ganTotal-calcRow(a).ganTotal).slice(0,5);
+  const topMargen=[...rows].sort((a,b)=>calcRow(b).margen-calcRow(a).margen).slice(0,5);
+  const agotados=rows.filter(r=>r.stock===0);
+  const bajoStock=rows.filter(r=>r.stock>0&&r.stock<=r.minstock);
+
+  document.getElementById("reportes-content").innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+      ${[
+        {l:"💲 Total Invertido",v:money(totInv),c:"#dc2626",bg:"#fff5f5"},
+        {l:"🏷️ Venta Potencial",v:money(totVenta),c:"#16a34a",bg:"#f0fdf4"},
+        {l:"💰 Ganancia Potencial",v:money(totGan),c:"#7c3aed",bg:"#faf5ff"},
+        {l:"📈 Margen Promedio",v:margenProm+"%",c:"#0284c7",bg:"#eff6ff"},
+      ].map(x=>`<div style="background:${x.bg};border-radius:12px;padding:14px;text-align:center;">
+        <div style="font-size:11px;color:#64748b;margin-bottom:4px;">${x.l}</div>
+        <div style="font-size:22px;font-weight:700;color:${x.c};">${x.v}</div>
+      </div>`).join("")}
+    </div>
+
+    <div class="card" style="margin-bottom:12px;">
+      <div class="card-header"><span style="font-size:13px;font-weight:700;">🏆 Top 5 — Mayor Ganancia Potencial</span></div>
+      <div class="card-body">
+        ${topGan.map((r,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f1f5f9;">
+          <div><span style="font-size:12px;color:#94a3b8;margin-right:8px;">#${i+1}</span><span style="font-size:13px;font-weight:600;">${r.nombre}</span></div>
+          <span style="font-size:13px;font-weight:700;color:#7c3aed;">+${money(calcRow(r).ganTotal)}</span>
+        </div>`).join("")}
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:12px;">
+      <div class="card-header"><span style="font-size:13px;font-weight:700;">📈 Top 5 — Mayor Margen</span></div>
+      <div class="card-body">
+        ${topMargen.map((r,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f1f5f9;">
+          <div><span style="font-size:12px;color:#94a3b8;margin-right:8px;">#${i+1}</span><span style="font-size:13px;font-weight:600;">${r.nombre}</span></div>
+          <span style="font-size:13px;font-weight:700;color:#16a34a;">${calcRow(r).margen}%</span>
+        </div>`).join("")}
+      </div>
+    </div>
+
+    ${agotados.length>0?`<div class="card" style="margin-bottom:12px;">
+      <div class="card-header"><span style="font-size:13px;font-weight:700;color:#dc2626;">⛔ Productos Agotados (${agotados.length})</span></div>
+      <div class="card-body">${agotados.map(r=>`<div style="padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:13px;">${r.nombre} <span style="color:#94a3b8;">${r.codigo}</span></div>`).join("")}</div>
+    </div>`:""}
+
+    ${bajoStock.length>0?`<div class="card">
+      <div class="card-header"><span style="font-size:13px;font-weight:700;color:#d97706;">⚠️ Stock Bajo — Reponer (${bajoStock.length})</span></div>
+      <div class="card-body">${bajoStock.map(r=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:13px;">
+        <span>${r.nombre}</span><span style="color:#d97706;font-weight:700;">${r.stock} uds</span>
+      </div>`).join("")}</div>
+    </div>`:""}`;
+}
+
+function renderReglas(){
+  document.getElementById("reglas-content").innerHTML=`
+    <div class="card" style="margin-bottom:12px;">
+      <div class="card-header"><span style="font-size:14px;font-weight:700;">📋 Reglas de Inventario</span></div>
+      <div class="card-body">
+        ${[
+          {ic:"🔄",t:"¿Cuándo reponer?",c:"Si el stock llega al mínimo configurado. Para productos de alta rotación (bolsos pequeños, monederos) mantén al menos 8-10 unidades.",col:"#0284c7",bg:"#eff6ff"},
+          {ic:"🏷️",t:"¿Cuándo poner en oferta?",c:"Si un producto lleva más de 30 días sin venderse o el stock supera el doble del mínimo. Aplica 15-20% de descuento para recuperar la inversión.",col:"#d97706",bg:"#fffbeb"},
+          {ic:"📦",t:"¿Cuántas unidades comprar?",c:"Para productos nuevos: empieza con 5-6 unidades. Si rota bien (se vende en menos de 2 semanas), duplica el siguiente pedido.",col:"#16a34a",bg:"#f0fdf4"},
+          {ic:"📈",t:"Margen mínimo recomendado",c:"Apunta a un margen de ganancia de al menos 60% sobre el costo. Si es menor, revisa el precio de venta o busca otro proveedor.",col:"#7c3aed",bg:"#faf5ff"},
+          {ic:"⭐",t:"Productos estrella",c:"Identifica tus 3 productos más vendidos y nunca dejes que se agoten. Son tu fuente principal de ingresos.",col:"#db2777",bg:"#fdf2f8"},
+          {ic:"🗑️",t:"¿Cuándo descontinuar?",c:"Si un producto no se vende en 60 días, véndelo con descuento agresivo (30-40%) y no lo repongas. Reinvierte en lo que sí vende.",col:"#dc2626",bg:"#fff5f5"},
+        ].map(r=>`<div class="tip-card" style="background:${r.bg};border-left-color:${r.col};margin-bottom:10px;">
+          <div style="font-size:13px;font-weight:700;color:${r.col};margin-bottom:4px;">${r.ic} ${r.t}</div>
+          <div style="font-size:12px;color:#475569;line-height:1.6;">${r.c}</div>
+        </div>`).join("")}
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:12px;">
+      <div class="card-header"><span style="font-size:14px;font-weight:700;">💡 Consejos para Evitar Pérdidas</span></div>
+      <div class="card-body">
+        ${[
+          "Siempre fotografía cada producto — los clientes compran más cuando ven la imagen real.",
+          "Negocia con proveedores: pide descuento por volumen o pago a 30 días.",
+          "Diversifica: no pongas más del 40% de tu inversión en una sola categoría.",
+          "Registra cada venta — si no sabes qué vendiste, no sabes qué reponer.",
+          "Revisa tus precios cada mes. Si el costo sube, ajusta el precio de venta.",
+          "Guarda siempre el 20% de tus ganancias para reinvertir en stock.",
+        ].map(c=>`<div style="display:flex;gap:8px;padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:13px;color:#475569;">
+          <span style="color:#16a34a;flex-shrink:0;">✓</span><span>${c}</span>
+        </div>`).join("")}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span style="font-size:14px;font-weight:700;">🧮 Fórmulas Clave</span></div>
+      <div class="card-body">
+        ${[
+          {f:"Ganancia por unidad",eq:"Precio Venta − Precio Costo",ej:"$45 − $18 = $27"},
+          {f:"Margen de ganancia",eq:"(Ganancia ÷ Costo) × 100",ej:"($27 ÷ $18) × 100 = 150%"},
+          {f:"Total invertido",eq:"Costo × Stock",ej:"$18 × 12 = $216"},
+          {f:"Ganancia potencial",eq:"Ganancia/u × Stock",ej:"$27 × 12 = $324"},
+          {f:"Precio de venta sugerido",eq:"Costo × 2.5 (mínimo)",ej:"$18 × 2.5 = $45"},
+        ].map(r=>`<div style="padding:9px 0;border-bottom:1px solid #f1f5f9;">
+          <div style="font-size:12px;font-weight:700;color:#1e293b;margin-bottom:3px;">${r.f}</div>
+          <div style="font-size:12px;color:#7c3aed;font-family:monospace;margin-bottom:2px;">${r.eq}</div>
+          <div style="font-size:11px;color:#94a3b8;">Ej: ${r.ej}</div>
+        </div>`).join("")}
+      </div>
+    </div>`;
+}
+
+function setFiltro(f){filtro=f;render();}
+function togglePanel(id){const p=document.getElementById(id);p.style.display=p.style.display==="none"?"block":"none";}
+
+// Photo
+let currentPhotoData="";
+function handlePhoto(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    const img=new Image();
+    img.onload=()=>{
+      const canvas=document.createElement("canvas");
+      const MAX=600;let w=img.width,h=img.height;
+      if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}
+      if(h>MAX){w=Math.round(w*MAX/h);h=MAX;}
+      canvas.width=w;canvas.height=h;
+      canvas.getContext("2d").drawImage(img,0,0,w,h);
+      currentPhotoData=canvas.toDataURL("image/jpeg",0.7);
+      document.getElementById("foto-img").src=currentPhotoData;
+      document.getElementById("foto-preview").style.display="block";
+    };img.src=ev.target.result;
+  };reader.readAsDataURL(file);
+}
+function removePhoto(){currentPhotoData="";document.getElementById("foto-img").src="";document.getElementById("foto-preview").style.display="none";}
+
+function updateCalcs(){
+  const c=parseFloat(document.getElementById("f-costo").value)||0;
+  const v=parseFloat(document.getElementById("f-venta").value)||0;
+  const s=parseInt(document.getElementById("f-stock").value)||0;
+  const gan=v-c;
+  const margen=pct(gan,c);
+  const inv=s*c;
+  const ganT=s*gan;
+  const barW=Math.min(Math.max(margen,0),150);
+  const barColor=margen>=60?"#16a34a":margen>=30?"#d97706":"#dc2626";
+  const estado=margen>=60?"✅ Excelente":margen>=40?"👍 Aceptable":margen>=20?"⚠️ Bajo":"❌ Muy bajo";
+
+  document.getElementById("modal-calcs").innerHTML=`
+    <div style="font-size:11px;font-weight:700;color:#1d4ed8;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.05em;">🧮 Resumen de la calculadora</div>
+
+    <!-- Fórmula visual paso a paso -->
+    <div style="background:#fff;border-radius:8px;padding:10px 12px;margin-bottom:10px;border:1px solid #e2e8f0;">
+      <div style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:8px;">PASO A PASO:</div>
+
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap;">
+        <span style="font-size:12px;color:#64748b;">Venta</span>
+        <span style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:3px 8px;font-size:13px;font-weight:700;color:#16a34a;">${money(v)}</span>
+        <span style="font-size:14px;color:#94a3b8;">−</span>
+        <span style="font-size:12px;color:#64748b;">Costo</span>
+        <span style="background:#fff5f5;border:1px solid #fecaca;border-radius:6px;padding:3px 8px;font-size:13px;font-weight:700;color:#dc2626;">${money(c)}</span>
+        <span style="font-size:14px;color:#94a3b8;">=</span>
+        <span style="font-size:12px;color:#64748b;">Ganancia/u</span>
+        <span style="background:#faf5ff;border:1px solid #e9d5ff;border-radius:6px;padding:3px 8px;font-size:13px;font-weight:700;color:#7c3aed;">${money(gan)}</span>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap;">
+        <span style="font-size:12px;color:#64748b;">Ganancia/u</span>
+        <span style="background:#faf5ff;border:1px solid #e9d5ff;border-radius:6px;padding:3px 8px;font-size:13px;font-weight:700;color:#7c3aed;">${money(gan)}</span>
+        <span style="font-size:14px;color:#94a3b8;">×</span>
+        <span style="font-size:12px;color:#64748b;">Stock</span>
+        <span style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:3px 8px;font-size:13px;font-weight:700;color:#1d4ed8;">${s}</span>
+        <span style="font-size:14px;color:#94a3b8;">=</span>
+        <span style="font-size:12px;color:#64748b;">Gan. Total</span>
+        <span style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:3px 8px;font-size:13px;font-weight:700;color:#16a34a;">+${money(ganT)}</span>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        <span style="font-size:12px;color:#64748b;">Costo/u</span>
+        <span style="background:#fff5f5;border:1px solid #fecaca;border-radius:6px;padding:3px 8px;font-size:13px;font-weight:700;color:#dc2626;">${money(c)}</span>
+        <span style="font-size:14px;color:#94a3b8;">×</span>
+        <span style="font-size:12px;color:#64748b;">Stock</span>
+        <span style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:3px 8px;font-size:13px;font-weight:700;color:#1d4ed8;">${s}</span>
+        <span style="font-size:14px;color:#94a3b8;">=</span>
+        <span style="font-size:12px;color:#64748b;">Total invertido</span>
+        <span style="background:#fff5f5;border:1px solid #fecaca;border-radius:6px;padding:3px 8px;font-size:13px;font-weight:700;color:#dc2626;">${money(inv)}</span>
+      </div>
+    </div>
+
+    <!-- Margen visual -->
+    <div style="background:#fff;border-radius:8px;padding:10px 12px;margin-bottom:8px;border:1px solid #e2e8f0;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div>
+          <div style="font-size:11px;font-weight:700;color:#64748b;">MARGEN DE GANANCIA</div>
+          <div style="font-size:11px;color:#94a3b8;">Por cada $1 que inviertes, ganas ${c>0?((gan/c).toFixed(2)):"0"} extra</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:24px;font-weight:700;color:${barColor};">${margen}%</div>
+          <div style="font-size:11px;color:${barColor};font-weight:600;">${estado}</div>
+        </div>
+      </div>
+      <div style="height:10px;background:#f1f5f9;border-radius:5px;overflow:hidden;">
+        <div style="height:100%;width:${Math.min(barW,100)}%;background:${barColor};border-radius:5px;transition:width 0.3s;"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:4px;">
+        <span style="font-size:10px;color:#dc2626;">0% ❌</span>
+        <span style="font-size:10px;color:#d97706;">40% 👍</span>
+        <span style="font-size:10px;color:#16a34a;">60%+ ✅</span>
+      </div>
+    </div>
+
+    ${margen<60&&c>0?`<div style="font-size:11px;color:#d97706;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:8px 10px;">
+      💡 <b>Sugerencia:</b> Para un margen del 60%, el precio de venta ideal sería <b>${money(c*2.5)}</b> o más.
+    </div>`:""}
+    ${c===0&&v===0?`<div style="font-size:12px;color:#94a3b8;text-align:center;padding:4px;">Ingresa el costo y precio de venta para ver los cálculos</div>`:""}
+  `;
+}
+
+function openModal(mode,id){
+  editingId=mode==="edit"?id:null;
+  document.getElementById("modal-title").textContent=mode==="add"?"Agregar Producto":"Editar Producto";
+  if(mode==="edit"){
+    const r=rows.find(x=>x.id===id);
+    document.getElementById("f-codigo").value=r.codigo||"";
+    document.getElementById("f-cat").value=r.categoria;
+    document.getElementById("f-nombre").value=r.nombre;
+    document.getElementById("f-color").value=r.color||"";
+    document.getElementById("f-nivel").value=r.nivel||"basico";
+    document.getElementById("f-costo").value=r.costo;
+    document.getElementById("f-venta").value=r.venta;
+    document.getElementById("f-stock").value=r.stock;
+    document.getElementById("f-minstock").value=r.minstock||5;
+    document.getElementById("f-prov").value=r.prov||"";
+    document.getElementById("f-dir").value=r.dir||"";
+    document.getElementById("f-maps").value=r.maps||"";
+    document.getElementById("f-notas").value=r.notas||"";
+    currentPhotoData=r.foto||"";
+    if(r.foto){document.getElementById("foto-img").src=r.foto;document.getElementById("foto-preview").style.display="block";}
+    else document.getElementById("foto-preview").style.display="none";
+  } else {
+    ["f-codigo","f-nombre","f-color","f-prov","f-dir","f-maps","f-notas"].forEach(i=>document.getElementById(i).value="");
+    document.getElementById("f-costo").value=0;
+    document.getElementById("f-venta").value=0;
+    document.getElementById("f-stock").value=0;
+    document.getElementById("f-minstock").value=5;
+    currentPhotoData="";
+    document.getElementById("foto-preview").style.display="none";
+    // auto-generate code
+    const next=rows.length>0?Math.max(...rows.map(r=>parseInt(r.codigo.replace(/\D/g,"")||0)))+1:1;
+    document.getElementById("f-codigo").value="BOL-"+String(next).padStart(3,"0");
+  }
+  updateCalcs();
+  document.getElementById("modal").style.display="flex";
+  document.body.style.overflow="hidden";
+}
+function closeModal(){document.getElementById("modal").style.display="none";document.body.style.overflow="";editingId=null;}
+function handleOverlay(e){if(e.target===document.getElementById("modal"))closeModal();}
+
+function saveModal(){
+  const nombre=document.getElementById("f-nombre").value.trim();
+  if(!nombre){alert("Ingresa el nombre del producto.");return;}
+  const newData={
+    codigo:document.getElementById("f-codigo").value.trim(),
+    categoria:document.getElementById("f-cat").value,
+    nombre,color:document.getElementById("f-color").value.trim(),
+    nivel:document.getElementById("f-nivel").value,
+    costo:parseFloat(document.getElementById("f-costo").value)||0,
+    venta:parseFloat(document.getElementById("f-venta").value)||0,
+    stock:parseInt(document.getElementById("f-stock").value)||0,
+    minstock:parseInt(document.getElementById("f-minstock").value)||5,
+    foto:currentPhotoData,
+    prov:document.getElementById("f-prov").value.trim(),
+    dir:document.getElementById("f-dir").value.trim(),
+    maps:document.getElementById("f-maps").value.trim(),
+    notas:document.getElementById("f-notas").value.trim(),
+  };
+  if(editingId)rows=rows.map(r=>r.id===editingId?{...newData,id:editingId}:r);
+  else rows.push({...newData,id:nid++});
+  save();closeModal();render();
+}
+function deleteRow(id){if(!confirm("¿Eliminar este producto?"))return;rows=rows.filter(r=>r.id!==id);save();render();}
+
+render();
+</script>
+</body>
+</html>
