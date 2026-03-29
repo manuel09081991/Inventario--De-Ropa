@@ -57,7 +57,15 @@ function StatBox({val,label,color}){
 function CatRow({cat,t,tiv,active,onClick}){
   const col=CC[cat]||"#64748b";
   const p=tiv>0?Math.round(t.inv/tiv*100):0;
-  return <div onClick={onClick} style={{marginBottom:8,padding:"10px 12px",background:active?col+"18":"#f8fafc",border:`1px solid ${active?col:"#e2e8f0"}`,borderLeft:`3px solid ${col}`,borderRadius:8,cursor:"pointer",userSelect:"none"}}>
+  function handleClick(){
+    onClick();
+    // On mobile, scroll to products after a short delay
+    setTimeout(()=>{
+      const el=document.getElementById("productos-lista");
+      if(el)el.scrollIntoView({behavior:"smooth",block:"start"});
+    },100);
+  }
+  return <div onClick={handleClick} style={{marginBottom:8,padding:"10px 12px",background:active?col+"18":"#f8fafc",border:`1px solid ${active?col:"#e2e8f0"}`,borderLeft:`3px solid ${col}`,borderRadius:8,cursor:"pointer",userSelect:"none"}}>
     <div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}>
       <span style={{fontSize:12,fontWeight:700,color:col}}>{CI[cat]||"📦"} {cat}</span>
       <span style={{fontSize:12,fontWeight:700,color:"#7c3aed"}}>+{money(t.gt)}</span>
@@ -312,7 +320,7 @@ function TabInventario({rows,setRows}){
             {Object.keys(byCat).sort((a,b)=>byCat[b].gt-byCat[a].gt).map(cat=>(
               <CatRow key={cat} cat={cat} t={byCat[cat]} tiv={tiv} active={filtro===cat} onClick={()=>setFiltro(filtro===cat?"Todas":cat)}/>
             ))}
-            <div onClick={()=>setFiltro("Todas")} style={{padding:"8px 10px",background:filtro==="Todas"?"#dbeafe":"#f0fdf4",border:`1px solid ${filtro==="Todas"?"#93c5fd":"#bbf7d0"}`,borderRadius:8,display:"flex",justifyContent:"space-between",cursor:"pointer",marginTop:4}}>
+            <div onClick={()=>{setFiltro("Todas");setTimeout(()=>{const el=document.getElementById("productos-lista");if(el)el.scrollIntoView({behavior:"smooth",block:"start"});},100);}} style={{padding:"8px 10px",background:filtro==="Todas"?"#dbeafe":"#f0fdf4",border:`1px solid ${filtro==="Todas"?"#93c5fd":"#bbf7d0"}`,borderRadius:8,display:"flex",justifyContent:"space-between",cursor:"pointer",marginTop:4}}>
               <span style={{fontSize:11,fontWeight:700,color:"#1d4ed8"}}>🏁 Total General</span>
               <span style={{fontSize:12,fontWeight:700,color:"#7c3aed"}}>+{money(tgt)}</span>
             </div>
@@ -337,11 +345,11 @@ function TabInventario({rows,setRows}){
         <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>
           {["Todas",...new Set(rows.map(r=>r.cat))].map(c=>{
             const col=CC[c]||"#3b82f6";const act=filtro===c;
-            return <button key={c} onClick={()=>setFiltro(c)} style={{padding:"6px 13px",borderRadius:20,fontSize:12,fontWeight:600,border:`1px solid ${act?col:"#e2e8f0"}`,background:act?col:"#fff",color:act?"#fff":"#64748b",cursor:"pointer",whiteSpace:"nowrap"}}>{CI[c]||""} {c}</button>;
+            return <button key={c} onClick={()=>{setFiltro(c);setTimeout(()=>{const el=document.getElementById("productos-lista");if(el)el.scrollIntoView({behavior:"smooth",block:"start"});},100);}} style={{padding:"6px 13px",borderRadius:20,fontSize:12,fontWeight:600,border:`1px solid ${act?col:"#e2e8f0"}`,background:act?col:"#fff",color:act?"#fff":"#64748b",cursor:"pointer",whiteSpace:"nowrap"}}>{CI[c]||""} {c}</button>;
           })}
         </div>
         <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Buscar producto..." style={{width:"100%",padding:"8px 12px",border:"1px solid #e2e8f0",borderRadius:8,fontSize:13,marginBottom:12,outline:"none"}}/>
-        <div className="pgrid" style={{display:"grid",gridTemplateColumns:"1fr",gap:0}}>
+        <div id="productos-lista" className="pgrid" style={{display:"grid",gridTemplateColumns:"1fr",gap:0}}>
           {visible.length===0
             ?<div style={{textAlign:"center",padding:40,color:"#94a3b8"}}>No hay productos en esta categoría.</div>
             :visible.map(r=><ProductCard key={r.id} r={r} onEdit={openEdit} onDel={onDel}/>)
@@ -355,6 +363,7 @@ function TabInventario({rows,setRows}){
 }
 
 function TabReportes({rows}){
+  const [detalle,setDetalle]=useState(null);
   const ti=rows.reduce((a,r)=>a+calcR(r).inv,0);
   const tg=rows.reduce((a,r)=>a+calcR(r).gt,0);
   const tv=rows.reduce((a,r)=>a+r.stk*r.ven,0);
@@ -363,12 +372,142 @@ function TabReportes({rows}){
   const top5m=[...rows].sort((a,b)=>calcR(b).m-calcR(a).m).slice(0,5);
   const ag=rows.filter(r=>r.stk===0);
   const bj=rows.filter(r=>r.stk>0&&r.stk<=r.min);
+
+  // Category breakdown
+  const byCat={};
+  rows.forEach(r=>{
+    if(!byCat[r.cat])byCat[r.cat]={inv:0,gt:0,tv:0,n:0,items:[]};
+    const c=calcR(r);
+    byCat[r.cat].inv+=c.inv;byCat[r.cat].gt+=c.gt;
+    byCat[r.cat].tv+=r.stk*r.ven;byCat[r.cat].n++;
+    byCat[r.cat].items.push(r);
+  });
+
+  // Desglose modal
+  function DetalleModal({tipo}){
+    let title,items,renderItem;
+    if(tipo==="inversion"){
+      title="💲 Desglose de Inversión";
+      items=Object.entries(byCat).sort((a,b)=>b[1].inv-a[1].inv);
+      renderItem=([cat,t])=>{
+        const col=CC[cat]||"#64748b";
+        return <div key={cat} style={{marginBottom:12}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+            <span style={{fontSize:13,fontWeight:700,color:col}}>{CI[cat]||"📦"} {cat}</span>
+            <span style={{fontSize:14,fontWeight:700,color:"#dc2626"}}>{money(t.inv)}</span>
+          </div>
+          {t.items.sort((a,b)=>calcR(b).inv-calcR(a).inv).map(r=><div key={r.id} style={{display:"flex",justifyContent:"space-between",padding:"6px 10px",background:"#f8fafc",borderRadius:6,marginBottom:4,fontSize:12}}>
+            <span style={{color:"#475569"}}>{r.nom}</span>
+            <div style={{textAlign:"right"}}>
+              <div style={{color:"#dc2626",fontWeight:600}}>{money(calcR(r).inv)}</div>
+              <div style={{color:"#94a3b8",fontSize:10}}>{r.stk} uds × {money(r.cos)}</div>
+            </div>
+          </div>)}
+        </div>;
+      };
+    } else if(tipo==="venta"){
+      title="🏷️ Desglose de Venta Potencial";
+      items=Object.entries(byCat).sort((a,b)=>b[1].tv-a[1].tv);
+      renderItem=([cat,t])=>{
+        const col=CC[cat]||"#64748b";
+        return <div key={cat} style={{marginBottom:12}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+            <span style={{fontSize:13,fontWeight:700,color:col}}>{CI[cat]||"📦"} {cat}</span>
+            <span style={{fontSize:14,fontWeight:700,color:"#16a34a"}}>{money(t.tv)}</span>
+          </div>
+          {t.items.sort((a,b)=>b.stk*b.ven-a.stk*a.ven).map(r=><div key={r.id} style={{display:"flex",justifyContent:"space-between",padding:"6px 10px",background:"#f8fafc",borderRadius:6,marginBottom:4,fontSize:12}}>
+            <span style={{color:"#475569"}}>{r.nom}</span>
+            <div style={{textAlign:"right"}}>
+              <div style={{color:"#16a34a",fontWeight:600}}>{money(r.stk*r.ven)}</div>
+              <div style={{color:"#94a3b8",fontSize:10}}>{r.stk} uds × {money(r.ven)}</div>
+            </div>
+          </div>)}
+        </div>;
+      };
+    } else if(tipo==="ganancia"){
+      title="💰 Desglose de Ganancia Potencial";
+      items=Object.entries(byCat).sort((a,b)=>b[1].gt-a[1].gt);
+      renderItem=([cat,t])=>{
+        const col=CC[cat]||"#64748b";
+        return <div key={cat} style={{marginBottom:12}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+            <span style={{fontSize:13,fontWeight:700,color:col}}>{CI[cat]||"📦"} {cat}</span>
+            <span style={{fontSize:14,fontWeight:700,color:"#7c3aed"}}>+{money(t.gt)}</span>
+          </div>
+          {t.items.sort((a,b)=>calcR(b).gt-calcR(a).gt).map(r=>{
+            const c=calcR(r);
+            return <div key={r.id} style={{padding:"6px 10px",background:"#f8fafc",borderRadius:6,marginBottom:4,fontSize:12}}>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
+                <span style={{color:"#475569",fontWeight:600}}>{r.nom}</span>
+                <span style={{color:"#7c3aed",fontWeight:700}}>+{money(c.gt)}</span>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:4}}>
+                <div style={{textAlign:"center",background:"#fff5f5",borderRadius:4,padding:"3px 4px"}}>
+                  <div style={{fontSize:9,color:"#fca5a5"}}>Costo/u</div>
+                  <div style={{fontSize:11,fontWeight:700,color:"#dc2626"}}>{money(r.cos)}</div>
+                </div>
+                <div style={{textAlign:"center",background:"#f0fdf4",borderRadius:4,padding:"3px 4px"}}>
+                  <div style={{fontSize:9,color:"#86efac"}}>Venta/u</div>
+                  <div style={{fontSize:11,fontWeight:700,color:"#16a34a"}}>{money(r.ven)}</div>
+                </div>
+                <div style={{textAlign:"center",background:"#faf5ff",borderRadius:4,padding:"3px 4px"}}>
+                  <div style={{fontSize:9,color:"#c4b5fd"}}>Margen</div>
+                  <div style={{fontSize:11,fontWeight:700,color:"#7c3aed"}}>{c.m}%</div>
+                </div>
+              </div>
+            </div>;
+          })}
+        </div>;
+      };
+    } else {
+      title="📈 Desglose de Margen";
+      items=rows.sort((a,b)=>calcR(b).m-calcR(a).m).map(r=>[r.id,r]);
+      renderItem=([id,r])=>{
+        const c=calcR(r);
+        const bc=c.m>=60?"#16a34a":c.m>=30?"#d97706":"#dc2626";
+        const bw=Math.min(c.m,100);
+        return <div key={id} style={{padding:"10px 12px",background:"#f8fafc",borderRadius:8,marginBottom:8}}>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+            <span style={{fontSize:13,fontWeight:600,color:"#1e293b"}}>{r.nom}</span>
+            <span style={{fontSize:14,fontWeight:700,color:bc}}>{c.m}%</span>
+          </div>
+          <div style={{height:8,background:"#e2e8f0",borderRadius:4,overflow:"hidden",marginBottom:4}}>
+            <div style={{height:"100%",width:`${bw}%`,background:bc,borderRadius:4}}/>
+          </div>
+          <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:"#64748b"}}>
+            <span>Costo: {money(r.cos)} | Venta: {money(r.ven)}</span>
+            <span>Gan/u: {money(c.g)}</span>
+          </div>
+        </div>;
+      };
+    }
+
+    return <div onClick={e=>e.target===e.currentTarget&&setDetalle(null)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:200,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
+      <div style={{background:"#fff",borderRadius:"20px 20px 0 0",width:"100%",maxWidth:580,padding:"20px 18px 36px",maxHeight:"85vh",overflowY:"auto"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+          <div style={{fontSize:15,fontWeight:700}}>{title}</div>
+          <button onClick={()=>setDetalle(null)} style={{background:"#f1f5f9",border:"none",borderRadius:20,padding:"4px 13px",fontSize:13,color:"#64748b",cursor:"pointer"}}>✕</button>
+        </div>
+        {items.map(renderItem)}
+      </div>
+    </div>;
+  }
+
   return <div style={{maxWidth:1200,margin:"0 auto",padding:"16px 12px 100px"}}>
+    {detalle&&<DetalleModal tipo={detalle}/>}
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}}>
-      {[["💲 Total Invertido",money(ti),"#dc2626","#fff5f5"],["🏷️ Venta Potencial",money(tv),"#16a34a","#f0fdf4"],["💰 Ganancia Potencial",money(tg),"#7c3aed","#faf5ff"],["📈 Margen Promedio",mp+"%","#0284c7","#eff6ff"]].map(([l,v,c,bg])=>(
-        <div key={l} style={{background:bg,borderRadius:12,padding:14,textAlign:"center"}}>
+      {[
+        ["💲 Total Invertido",money(ti),"#dc2626","#fff5f5","inversion"],
+        ["🏷️ Venta Potencial",money(tv),"#16a34a","#f0fdf4","venta"],
+        ["💰 Ganancia Potencial",money(tg),"#7c3aed","#faf5ff","ganancia"],
+        ["📈 Margen Promedio",mp+"%","#0284c7","#eff6ff","margen"]
+      ].map(([l,v,c,bg,tipo])=>(
+        <div key={l} onClick={()=>setDetalle(tipo)} style={{background:bg,borderRadius:12,padding:14,textAlign:"center",cursor:"pointer",border:"1px solid transparent",transition:"all 0.15s"}}
+          onMouseEnter={e=>{e.currentTarget.style.border="1px solid "+c;e.currentTarget.style.transform="scale(1.02)";}}
+          onMouseLeave={e=>{e.currentTarget.style.border="1px solid transparent";e.currentTarget.style.transform="scale(1)";}}>
           <div style={{fontSize:11,color:"#64748b",marginBottom:4}}>{l}</div>
           <div style={{fontSize:20,fontWeight:700,color:c}}>{v}</div>
+          <div style={{fontSize:10,color:c,marginTop:4}}>Toca para ver desglose →</div>
         </div>
       ))}
     </div>
@@ -376,10 +515,20 @@ function TabReportes({rows}){
       <div key={title} style={{background:"#fff",borderRadius:12,border:"1px solid #e2e8f0",marginBottom:12,overflow:"hidden"}}>
         <div style={{padding:"12px 16px",borderBottom:"1px solid #f1f5f9",fontSize:13,fontWeight:700}}>{title}</div>
         <div style={{padding:"0 16px"}}>
-          {list.map((r,i)=><div key={r.id} style={{display:"flex",justifyContent:"space-between",padding:"10px 0",borderBottom:"1px solid #f1f5f9"}}>
-            <span style={{fontSize:13}}><span style={{color:"#94a3b8",marginRight:8}}>#{i+1}</span>{r.nom}</span>
-            <span style={{fontSize:13,fontWeight:700,color:col}}>{val(r)}</span>
-          </div>)}
+          {list.map((r,i)=>{
+            const c=calcR(r);
+            return <div key={r.id} style={{padding:"10px 0",borderBottom:"1px solid #f1f5f9"}}>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                <span style={{fontSize:13}}><span style={{color:"#94a3b8",marginRight:8}}>#{i+1}</span><b>{r.nom}</b></span>
+                <span style={{fontSize:13,fontWeight:700,color:col}}>{val(r)}</span>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:4}}>
+                <div style={{fontSize:11,color:"#64748b"}}>💲 Costo: {money(r.cos)}</div>
+                <div style={{fontSize:11,color:"#64748b"}}>🏷️ Venta: {money(r.ven)}</div>
+                <div style={{fontSize:11,color:"#64748b"}}>📦 Stock: {r.stk}</div>
+              </div>
+            </div>;
+          })}
         </div>
       </div>
     ))}
